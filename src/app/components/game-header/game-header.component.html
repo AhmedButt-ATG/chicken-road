@@ -1,0 +1,21 @@
+<div class="flex justify-between items-center mb-6">
+  <div class="flex items-center space-x-4">
+    <span class="text-sm text-gray-400">{{currentMultiplier > 0 ? currentMultiplier.toFixed(2) + 'x' : '1.00x'}}</span>
+    <span class="text-gray-400">|</span>
+    <span class="text-sm text-gray-400">Mines</span>
+  </div>
+  <h1 class="text-4xl font-bold tracking-wider">MINES</h1>
+</div>
+
+<!-- Multiplier Display -->
+<div class="flex justify-center space-x-2 mb-6">
+  <div 
+    *ngFor="let mult of multiplierDisplay; let i = index" 
+    class="px-3 py-1 rounded text-sm font-semibold"
+    [ngClass]="{
+      'bg-emerald-500 text-white': revealedTiles > i,
+      'bg-slate-700 text-gray-300': revealedTiles <= i
+    }">
+    {{mult}}
+  </div>
+</div>

@@ -1,0 +1,95 @@
+# Mines Game – Build Instructions
+
+Create a Mines-style betting game with a clean, modern casino interface.
+
+## Game Overview
+Mines is a risk-and-reward game played on a grid.  
+The player reveals tiles one by one, trying to avoid hidden mines while increasing a payout multiplier.
+
+## Objective
+Allow the player to place a bet, reveal safe tiles, increase winnings, and cash out before hitting a mine.
+
+## Core Rules
+- The player has a balance.
+- The player selects a bet amount.
+- The player selects the number of mines before starting.
+- A fixed-size grid of tiles is generated.
+- Mines are randomly hidden behind tiles.
+- Tiles start hidden.
+- The player clicks tiles to reveal them.
+
+## Tile Outcomes
+- **Safe tile**:
+  - Increases the multiplier.
+  - The tile visually changes to indicate success.
+  - The game continues.
+- **Mine tile**:
+  - Ends the round immediately.
+  - The entire bet is lost.
+  - All mines are revealed.
+
+## Multiplier Logic
+- The multiplier increases with each safe tile revealed.
+- More mines selected = faster multiplier growth.
+- Multiplier is clearly displayed and updated in real time.
+
+## Cash Out Rule
+- The player can cash out at any time **before** hitting a mine.
+- Cashing out:
+  - Ends the round.
+  - Pays out: bet × current multiplier.
+  - Locks in winnings safely.
+
+## Game Flow
+1. Player sets bet amount.
+2. Player selects number of mines.
+3. Player starts the round.
+4. Grid becomes active.
+5. Player reveals tiles one by one.
+6. Multiplier increases on each safe tile.
+7. Player either:
+   - Cashes out and wins, or
+   - Hits a mine and loses.
+8. Round ends and balance updates.
+
+## UI Layout
+### Grid Area
+- Square grid (e.g. 5×5).
+- Tiles are evenly spaced.
+- Tiles are clickable and animated on reveal.
+
+### Information Area
+- Current multiplier display.
+- Current potential payout display.
+- Number of mines selected.
+
+### Control Area
+- Balance display.
+- Bet amount controls (increase/decrease).
+- Mine count selector.
+- Start button.
+- Cash out button (enabled only during an active round).
+
+## Visual Style
+- Dark background.
+- Neon or soft glow accents.
+- Clear win and loss states.
+- Smooth tile flip or reveal animations.
+- Winning tiles feel rewarding.
+- Mines are visually distinct and dramatic when revealed.
+
+## Behavior Constraints
+- Mines positions remain fixed during a round.
+- A revealed tile cannot be clicked again.
+- Only one round can be active at a time.
+- Balance cannot go negative.
+- Cash out is disabled after a mine is triggered.
+
+## Experience Goals
+- High tension with each click.
+- Clear risk vs reward.
+- Immediate visual feedback.
+- Fast, responsive gameplay.
+- Mobile and desktop friendly.
+
+Build the complete playable game strictly following this description.
