@@ -1,1 +1,28 @@
-/* Game status specific styles */
+.status {
+	font-weight: 900;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	font-size: clamp(1.1rem, 2.3vw, 1.8rem);
+	color: rgba(255, 255, 255, 0.90);
+	text-shadow:
+		0 2px 0 rgba(0, 0, 0, 0.65),
+		0 0 22px rgba(56, 189, 248, 0.25);
+}
+
+.status--idle {
+	color: rgba(186, 230, 253, 0.95);
+}
+
+.status--win {
+	color: rgba(52, 211, 153, 0.95);
+	text-shadow:
+		0 2px 0 rgba(0, 0, 0, 0.65),
+		0 0 22px rgba(16, 185, 129, 0.25);
+}
+
+.status--lose {
+	color: rgba(248, 113, 113, 0.95);
+	text-shadow:
+		0 2px 0 rgba(0, 0, 0, 0.65),
+		0 0 22px rgba(239, 68, 68, 0.25);
+}

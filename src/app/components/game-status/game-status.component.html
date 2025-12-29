@@ -1,14 +1,11 @@
-<div class="text-center mb-6">
-  <div *ngIf="!gameState.isPlaying && !gameState.gameOver && !gameState.won" 
-       class="text-2xl font-bold text-gray-300">
+<div class="select-none text-center">
+  <div
+    *ngIf="!gameState.isPlaying && !gameState.gameOver && !gameState.won"
+    class="status status--idle">
     PRESS BET TO START
   </div>
-  <div *ngIf="gameState.gameOver" 
-       class="text-2xl font-bold text-red-400">
-    GAME OVER
-  </div>
-  <div *ngIf="gameState.won" 
-       class="text-2xl font-bold text-emerald-400">
+  <div *ngIf="gameState.gameOver" class="status status--lose">GAME OVER</div>
+  <div *ngIf="gameState.won" class="status status--win">
     YOU WON! €{{gameState.potentialPayout.toFixed(2)}}
   </div>
 </div>
