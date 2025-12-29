@@ -1,64 +1,61 @@
+/* Base Tile Styles */
 .grid-tile {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  cursor: pointer;
+  transform: translateZ(0); /* Hardware acceleration */
 }
 
-.grid-tile:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-}
-
+/* 1. Hidden State (3D Button Look) */
 .tile--hidden {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow:
-    0 16px 30px rgba(0, 0, 0, 0.35),
-    inset 0 2px 0 rgba(255, 255, 255, 0.06),
-    inset 0 -6px 12px rgba(0, 0, 0, 0.35);
+  background: #2f4553;
+  box-shadow: 
+    0 4px 0 0 #213743, /* The "Ledge" bottom */
+    inset 0 1px 1px rgba(255,255,255,0.1);
+  transition: all 0.1s ease;
 }
 
+.tile--hidden:hover:not(:disabled) {
+  background: #3d5a6d;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 0 #213743;
+}
+
+.tile--hidden:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 0 #213743;
+}
+
+/* 2. Safe Tile (Revealed) */
 .tile--safe {
-  background: linear-gradient(135deg, rgba(52, 211, 153, 0.95), rgba(16, 185, 129, 0.95));
-  border: 1px solid rgba(52, 211, 153, 0.35);
-  box-shadow:
-    0 16px 30px rgba(0, 0, 0, 0.35),
-    0 0 22px rgba(16, 185, 129, 0.25),
-    inset 0 2px 0 rgba(255, 255, 255, 0.18);
+  background: #071821; /* Dark inset background */
+  box-shadow: 
+    inset 0 4px 10px rgba(0,0,0,0.5),
+    0 0 15px rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
+/* 3. Mine Tile (Revealed) */
 .tile--mine {
-  background: radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.18), rgba(239, 68, 68, 0.95) 40%, rgba(220, 38, 38, 0.95));
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  box-shadow:
-    0 16px 30px rgba(0, 0, 0, 0.35),
-    0 0 22px rgba(239, 68, 68, 0.25),
-    inset 0 2px 0 rgba(255, 255, 255, 0.10);
+  background: #1a0909;
+  box-shadow: 
+    inset 0 4px 10px rgba(0,0,0,0.7),
+    0 0 20px rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
 }
 
-.mine-explode {
-  animation: explode 0.5s ease-out;
+/* Shaking animation for hitting a mine */
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
 }
 
-@keyframes explode {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.diamond-shine {
-  animation: shine 2s ease-in-out infinite;
-}
-
-@keyframes shine {
-  0%, 100% {
-    filter: brightness(1);
-  }
-  50% {
-    filter: brightness(1.3);
+/* Responsive Scaling for Icons */
+@media (max-width: 640px) {
+  .grid-tile svg {
+    width: 80%;
+    height: 80%;
   }
 }
