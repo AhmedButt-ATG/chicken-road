@@ -2,28 +2,15 @@ import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-interface Tile {
-  id: number;
-  revealed: boolean;
-  isMine: boolean;
-  row: number;
-  col: number;
-}
-
-interface GameState {
-  isPlaying: boolean;
-  gameOver: boolean;
-  won: boolean;
-  revealedTiles: number;
-  currentMultiplier: number;
-  potentialPayout: number;
-}
+import { GameHeaderComponent } from './components/game-header/game-header.component';
+import { ControlPanelComponent, GameState } from './components/control-panel/control-panel.component';
+import { GameStatusComponent } from './components/game-status/game-status.component';
+import { GameGridComponent, Tile } from './components/game-grid/game-grid.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, FormsModule],
+  imports: [RouterOutlet, CommonModule, FormsModule, GameHeaderComponent, ControlPanelComponent, GameStatusComponent, GameGridComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -194,18 +181,13 @@ export class AppComponent {
     this.musicEnabled = !this.musicEnabled;
   }
   
-  getMultiplierDisplay(index: number): string {
-    const multipliers = [
-      this.calculateMultiplier(1),
-      this.calculateMultiplier(2),
-      this.calculateMultiplier(3),
-      this.calculateMultiplier(4),
-      this.calculateMultiplier(5)
+  getMultiplierDisplay(): string[] {
+    return [
+      this.calculateMultiplier(1).toFixed(2) + 'x',
+      this.calculateMultiplier(2).toFixed(2) + 'x',
+      this.calculateMultiplier(3).toFixed(2) + 'x',
+      this.calculateMultiplier(4).toFixed(2) + 'x',
+      this.calculateMultiplier(5).toFixed(2) + 'x'
     ];
-    return multipliers[index] ? `${multipliers[index].toFixed(2)}x` : '0.00x';
-  }
-  
-  trackByTileId(index: number, tile: Tile): number {
-    return tile.id;
   }
 }

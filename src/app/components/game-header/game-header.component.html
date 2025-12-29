@@ -1,21 +1,30 @@
-<div class="flex justify-between items-center mb-6">
-  <div class="flex items-center space-x-4">
-    <span class="text-sm text-gray-400">{{currentMultiplier > 0 ? currentMultiplier.toFixed(2) + 'x' : '1.00x'}}</span>
-    <span class="text-gray-400">|</span>
-    <span class="text-sm text-gray-400">Mines</span>
+<div class="mb-3 flex items-center justify-between text-xs text-white/70">
+  <div class="flex items-center gap-2">
+    <span>{{timeLabel}}</span>
+    <span class="text-white/40">|</span>
+    <span>Mines</span>
   </div>
-  <h1 class="text-4xl font-bold tracking-wider">MINES</h1>
+  <div class="h-6 w-6 rounded bg-white/10 text-center text-sm font-extrabold leading-6">H</div>
 </div>
 
-<!-- Multiplier Display -->
-<div class="flex justify-center space-x-2 mb-6">
-  <div 
-    *ngFor="let mult of multiplierDisplay; let i = index" 
-    class="px-3 py-1 rounded text-sm font-semibold"
-    [ngClass]="{
-      'bg-emerald-500 text-white': revealedTiles > i,
-      'bg-slate-700 text-gray-300': revealedTiles <= i
-    }">
+<div class="mb-2 text-center">
+  <div class="text-5xl font-black tracking-[0.15em] sm:text-6xl">MINES</div>
+</div>
+
+<div class="mb-4 flex flex-wrap items-center justify-center gap-2">
+  <div class="pill pill--active">
+    <span class="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/10">
+      <svg class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M13.5 2a1 1 0 0 1 1 1v2.086l1.207-1.207a1 1 0 1 1 1.414 1.414L16.914 6.5H19a1 1 0 1 1 0 2h-2.086l1.207 1.207a1 1 0 0 1-1.414 1.414L15.5 9.914V12a1 1 0 1 1-2 0V9.914l-1.207 1.207a1 1 0 1 1-1.414-1.414L12.086 8.5H10a1 1 0 1 1 0-2h2.086l-1.207-1.207a1 1 0 0 1 1.414-1.414L13.5 5.086V3a1 1 0 0 1 1-1z"/>
+      </svg>
+    </span>
+    {{currentLabel}}
+  </div>
+
+  <div
+    *ngFor="let mult of multiplierDisplay; let i = index"
+    class="pill"
+    [ngClass]="{ 'pill--active': revealedTiles > i }">
     {{mult}}
   </div>
 </div>

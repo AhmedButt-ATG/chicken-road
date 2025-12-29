@@ -1,244 +1,51 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-  <div class="container mx-auto px-4 py-6 max-w-7xl">
-    
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <div class="flex items-center space-x-4">
-        <span class="text-sm text-gray-400">{{gameState.revealedTiles > 0 ? (gameState.potentialPayout / betAmount).toFixed(2) + 'x' : '1.00x'}}</span>
-        <span class="text-gray-400">|</span>
-        <span class="text-sm text-gray-400">Mines</span>
+<div class="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 text-white">
+  <div class="mx-auto w-full max-w-[1100px] px-3 py-4 sm:px-4 sm:py-6">
+    <div class="flex flex-col gap-4 lg:flex-row lg:gap-6">
+      <!-- Left: Control Panel -->
+      <app-control-panel
+        [balance]="balance"
+        [betAmount]="betAmount"
+        [numberOfMines]="numberOfMines"
+        [gridSize]="gridSize"
+        [gameState]="gameState"
+        [soundEnabled]="soundEnabled"
+        [musicEnabled]="musicEnabled"
+        [mineOptions]="mineOptions"
+        [gridSizes]="gridSizes"
+        (startGame)="startGame()"
+        (cashOut)="cashOut()"
+        (resetGame)="resetGame()"
+        (adjustBet)="adjustBet($event)"
+        (setMineCount)="setMineCount($event)"
+        (setGridSize)="setGridSize($event)"
+        (toggleSound)="toggleSound()"
+        (toggleMusic)="toggleMusic()">
+      </app-control-panel>
+
+      <!-- Right: Board -->
+      <div class="flex-1">
+        <div class="rounded-xl bg-slate-900/30 p-3 ring-1 ring-white/10 sm:p-4">
+          <app-game-header
+            [currentMultiplier]="gameState.currentMultiplier"
+            [betAmount]="betAmount"
+            [revealedTiles]="gameState.revealedTiles"
+            [multiplierDisplay]="getMultiplierDisplay()">
+          </app-game-header>
+
+          <div class="relative">
+            <app-game-grid
+              [tiles]="tiles"
+              [gameState]="gameState"
+              [gridSize]="gridSize"
+              (tileClick)="revealTile($event)">
+            </app-game-grid>
+
+            <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <app-game-status [gameState]="gameState"></app-game-status>
+            </div>
+          </div>
+        </div>
       </div>
-      <h1 class="text-4xl font-bold tracking-wider">MINES</h1>
     </div>
-
-    <!-- Multiplier Display -->
-    <div class="flex justify-center space-x-2 mb-6">
-      <div 
-        *ngFor="let _ of [1,2,3,4,5]; let i = index" 
-        class="px-3 py-1 rounded text-sm font-semibold"
-        [ngClass]="{
-          'bg-emerald-500 text-white': gameState.revealedTiles > i,
-          'bg-slate-700 text-gray-300': gameState.revealedTiles <= i
-        }">
-        {{getMultiplierDisplay(i)}}
-      </div>
-    </div>
-
-    <div class="flex flex-col lg:flex-row gap-6">
-      
-      <!-- Left Control Panel -->
-      <div class="lg:w-80 bg-slate-800/50 rounded-lg p-6 backdrop-blur-sm">
-        
-        <!-- Mine Selection -->
-        <div class="mb-6">
-          <h3 class="text-sm font-semibold mb-3 text-gray-300">NUMBER OF MINES</h3>
-          <div class="grid grid-cols-5 gap-2">
-            <button 
-              *ngFor="let option of mineOptions" 
-              (click)="setMineCount(option)"
-              [disabled]="gameState.isPlaying"
-              class="py-2 px-3 rounded text-sm font-semibold transition-all"
-              [ngClass]="{
-                'bg-emerald-500 text-white': numberOfMines === option,
-                'bg-slate-700 text-gray-300 hover:bg-slate-600': numberOfMines !== option,
-                'opacity-50 cursor-not-allowed': gameState.isPlaying
-              }">
-              {{option}}
-            </button>
-            <button 
-              class="py-2 px-3 rounded text-sm font-semibold bg-slate-700 text-gray-300 hover:bg-slate-600"
-              [disabled]="gameState.isPlaying">
-              CUSTOM
-            </button>
-          </div>
-        </div>
-
-        <!-- Grid Size Selection -->
-        <div class="mb-6">
-          <h3 class="text-sm font-semibold mb-3 text-gray-300">GRID SIZE</h3>
-          <div class="grid grid-cols-4 gap-2">
-            <button 
-              *ngFor="let size of gridSizes" 
-              (click)="setGridSize(size)"
-              [disabled]="gameState.isPlaying"
-              class="py-2 px-3 rounded text-sm font-semibold transition-all"
-              [ngClass]="{
-                'bg-emerald-500 text-white': gridSize === size,
-                'bg-slate-700 text-gray-300 hover:bg-slate-600': gridSize !== size,
-                'opacity-50 cursor-not-allowed': gameState.isPlaying
-              }">
-              {{size}}x{{size}}
-            </button>
-          </div>
-        </div>
-
-        <!-- Balance and Bet Section -->
-        <div class="space-y-4 mb-6">
-          <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-300">DEMO BALANCE</span>
-            <span class="text-sm text-yellow-400">WIN</span>
-          </div>
-          <div class="text-xl font-bold">€{{balance.toFixed(2)}}</div>
-          
-          <div *ngIf="gameState.won" class="text-emerald-400 font-semibold">
-            +€{{(gameState.potentialPayout - betAmount).toFixed(2)}}
-          </div>
-          
-          <div class="text-lg font-semibold">€{{betAmount.toFixed(2)}}</div>
-        </div>
-
-        <!-- Bet Controls -->
-        <div class="mb-6">
-          <div class="flex items-center space-x-2 mb-4">
-            <button 
-              (click)="adjustBet(-0.50)"
-              [disabled]="gameState.isPlaying"
-              class="p-2 bg-slate-700 hover:bg-slate-600 rounded transition-colors disabled:opacity-50">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M3 10l7-7 7 7h-4v7h-6v-7H3z"/>
-              </svg>
-            </button>
-            <button 
-              (click)="adjustBet(0.50)"
-              [disabled]="gameState.isPlaying"
-              class="p-2 bg-slate-700 hover:bg-slate-600 rounded transition-colors disabled:opacity-50">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M17 10l-7 7-7-7h4V3h6v7h4z"/>
-              </svg>
-            </button>
-          </div>
-          
-          <!-- Main Action Button -->
-          <button 
-            *ngIf="!gameState.isPlaying && !gameState.gameOver && !gameState.won"
-            (click)="startGame()"
-            class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-bold text-lg transition-colors">
-            BET
-          </button>
-          
-          <button 
-            *ngIf="gameState.isPlaying && !gameState.gameOver"
-            (click)="cashOut()"
-            [disabled]="gameState.revealedTiles === 0"
-            class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-bold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            COLLECT<br>
-            <span class="text-sm">€{{gameState.potentialPayout.toFixed(2)}}</span>
-          </button>
-          
-          <button 
-            *ngIf="gameState.gameOver || gameState.won"
-            (click)="resetGame()"
-            class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-bold text-lg transition-colors">
-            {{gameState.gameOver ? 'BET' : 'NEW GAME'}}
-          </button>
-        </div>
-
-        <!-- Control Icons -->
-        <div class="flex justify-around">
-          <button 
-            (click)="toggleSound()"
-            class="flex flex-col items-center space-y-1 p-2 rounded transition-colors"
-            [ngClass]="soundEnabled ? 'text-emerald-400' : 'text-gray-500'">
-            <div class="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 3.75a.75.75 0 0 0-1.264-.546L5.203 6H2.75A.75.75 0 0 0 2 6.75v6.5c0 .414.336.75.75.75h2.453l3.533 2.796A.75.75 0 0 0 10 16.25V3.75zM15.536 5.464a.75.75 0 0 1 0 1.061 3.5 3.5 0 0 1 0 4.95.75.75 0 1 1-1.061-1.06 2 2 0 0 0 0-2.83.75.75 0 0 1 1.061-1.06z"/>
-              </svg>
-            </div>
-            <span class="text-xs">SOUND</span>
-          </button>
-          
-          <button 
-            (click)="toggleMusic()"
-            class="flex flex-col items-center space-y-1 p-2 rounded transition-colors"
-            [ngClass]="musicEnabled ? 'text-emerald-400' : 'text-gray-500'">
-            <div class="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M15.5 2.25a.75.75 0 0 1 .75.75v11.69l-3.061-2.498a1.5 1.5 0 0 0-1.878 0L8.25 14.69V3a.75.75 0 0 1 .75-.75h6.5z"/>
-              </svg>
-            </div>
-            <span class="text-xs">MUSIC</span>
-          </button>
-          
-          <button class="flex flex-col items-center space-y-1 p-2 rounded transition-colors text-emerald-400">
-            <div class="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center">
-              <span class="text-sm font-bold">i</span>
-            </div>
-            <span class="text-xs">INFO</span>
-          </button>
-        </div>
-        
-      </div>
-
-      <!-- Game Grid -->
-      <div class="flex-1 flex justify-center items-start">
-        <div class="max-w-2xl w-full">
-          
-          <!-- Game Status Messages -->
-          <div class="text-center mb-6">
-            <div *ngIf="!gameState.isPlaying && !gameState.gameOver && !gameState.won" 
-                 class="text-2xl font-bold text-gray-300">
-              PRESS BET TO START
-            </div>
-            <div *ngIf="gameState.gameOver" 
-                 class="text-2xl font-bold text-red-400">
-              GAME OVER
-            </div>
-            <div *ngIf="gameState.won" 
-                 class="text-2xl font-bold text-emerald-400">
-              YOU WON! €{{gameState.potentialPayout.toFixed(2)}}
-            </div>
-          </div>
-
-          <!-- Grid -->
-          <div 
-            class="grid gap-2 mx-auto"
-            [style.grid-template-columns]="'repeat(' + gridSize + ', 1fr)'"
-            [style.max-width]="'min(90vw, ' + (gridSize * 80) + 'px)'">
-            
-            <button 
-              *ngFor="let tile of tiles; trackBy: trackByTileId"
-              (click)="revealTile(tile)"
-              [disabled]="!gameState.isPlaying || tile.revealed || gameState.gameOver"
-              class="aspect-square rounded-lg transition-all duration-300 text-2xl font-bold relative overflow-hidden"
-              [ngClass]="{
-                'bg-slate-700 hover:bg-slate-600 border-2 border-slate-600': !tile.revealed,
-                'bg-emerald-500 text-white': tile.revealed && !tile.isMine,
-                'bg-red-500 text-white': tile.revealed && tile.isMine,
-                'cursor-not-allowed opacity-50': !gameState.isPlaying || gameState.gameOver,
-                'transform scale-95': tile.revealed
-              }">
-              
-              <!-- Tile content -->
-              <div *ngIf="!tile.revealed" class="absolute inset-0 flex items-center justify-center">
-                <div class="w-2 h-2 bg-slate-500 rounded-full"></div>
-              </div>
-              
-              <!-- Diamond (safe tile) -->
-              <div *ngIf="tile.revealed && !tile.isMine" class="absolute inset-0 flex items-center justify-center">
-                <svg class="w-8 h-8 text-cyan-300" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2L4 7l8 15 8-15-8-5z"/>
-                </svg>
-              </div>
-              
-              <!-- Mine -->
-              <div *ngIf="tile.revealed && tile.isMine" class="absolute inset-0 flex items-center justify-center">
-                <div class="relative">
-                  <svg class="w-8 h-8 text-gray-800" fill="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="8"/>
-                  </svg>
-                  <svg class="w-3 h-3 text-yellow-400 absolute top-1 left-1/2 transform -translate-x-1/2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z"/>
-                  </svg>
-                </div>
-              </div>
-              
-            </button>
-          </div>
-          
-        </div>
-      </div>
-      
-    </div>
-    
   </div>
 </div>

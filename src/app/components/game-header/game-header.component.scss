@@ -1,1 +1,19 @@
-/* Game header specific styles */
+.pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 1.5rem;
+	padding: 0 0.6rem;
+	border-radius: 0.35rem;
+	font-size: 0.75rem;
+	font-weight: 800;
+	background: rgba(255, 255, 255, 0.10);
+	color: rgba(255, 255, 255, 0.80);
+	border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.pill--active {
+	background: rgba(16, 185, 129, 0.25);
+	border-color: rgba(16, 185, 129, 0.35);
+	color: rgba(255, 255, 255, 0.95);
+}

@@ -1,0 +1,64 @@
+.grid-tile {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.grid-tile:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.tile--hidden {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    0 16px 30px rgba(0, 0, 0, 0.35),
+    inset 0 2px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -6px 12px rgba(0, 0, 0, 0.35);
+}
+
+.tile--safe {
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.95), rgba(16, 185, 129, 0.95));
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  box-shadow:
+    0 16px 30px rgba(0, 0, 0, 0.35),
+    0 0 22px rgba(16, 185, 129, 0.25),
+    inset 0 2px 0 rgba(255, 255, 255, 0.18);
+}
+
+.tile--mine {
+  background: radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.18), rgba(239, 68, 68, 0.95) 40%, rgba(220, 38, 38, 0.95));
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  box-shadow:
+    0 16px 30px rgba(0, 0, 0, 0.35),
+    0 0 22px rgba(239, 68, 68, 0.25),
+    inset 0 2px 0 rgba(255, 255, 255, 0.10);
+}
+
+.mine-explode {
+  animation: explode 0.5s ease-out;
+}
+
+@keyframes explode {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.diamond-shine {
+  animation: shine 2s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.3);
+  }
+}
