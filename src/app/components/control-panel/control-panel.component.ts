@@ -9,6 +9,8 @@ export interface GameState {
   revealedTiles: number;
   currentMultiplier: number;
   potentialPayout: number;
+  picksMade?: number;
+  selectionLimit?: number;
 }
 
 @Component({
@@ -34,6 +36,7 @@ export class ControlPanelComponent {
   @Output() resetGame = new EventEmitter<void>();
   @Output() adjustBet = new EventEmitter<number>();
   @Output() setMineCount = new EventEmitter<number>();
+  @Output() setSelectionLimit = new EventEmitter<number>();
   @Output() setGridSize = new EventEmitter<number>();
   @Output() toggleSound = new EventEmitter<void>();
   @Output() toggleMusic = new EventEmitter<void>();
@@ -62,11 +65,22 @@ export class ControlPanelComponent {
     this.setGridSize.emit(size);
   }
 
+  onSetSelectionLimit(count: number) {
+    this.setSelectionLimit.emit(count);
+  }
+
   onToggleSound() {
     this.toggleSound.emit();
   }
 
   onToggleMusic() {
     this.toggleMusic.emit();
+  }
+
+  // local compact/expanded state for mobile
+  compactView = false;
+
+  toggleCompactView() {
+    this.compactView = !this.compactView;
   }
 }

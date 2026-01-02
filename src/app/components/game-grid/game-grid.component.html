@@ -8,7 +8,7 @@
       <button
         *ngFor="let tile of tiles; trackBy: trackByTileId"
         (click)="onTileClick(tile)"
-        [disabled]="!gameState.isPlaying || tile.revealed || gameState.gameOver"
+        [disabled]="!gameState.isPlaying || tile.revealed || gameState.gameOver || (gameState.selectionLimit && (gameState.picksMade ?? 0) >= gameState.selectionLimit)"
         class="grid-tile group aspect-square rounded-lg sm:rounded-xl relative overflow-hidden select-none outline-none transition-all"
         [ngClass]="{
           'tile--hidden': !tile.revealed,
@@ -24,18 +24,14 @@
         </div>
 
         <div *ngIf="tile.revealed && !tile.isMine" class="absolute inset-0 flex items-center justify-center animate-in zoom-in duration-300">
-          <svg class="h-2/3 w-2/3 text-cyan-300 drop-shadow-[0_0_8px_rgba(103,232,249,0.8)]" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2L3.5 12 12 22l8.5-10L12 2z" />
-            <path d="M12 2L8 12h8L12 2z" fill="white" fill-opacity="0.3" />
-          </svg>
+          <div class="relative h-2/3 w-2/3">
+            <img src="diamond.png" class="w-full h-full drop-shadow-xl" />
+          </div>
         </div>
 
         <div *ngIf="tile.revealed && tile.isMine" class="absolute inset-0 flex items-center justify-center animate-in zoom-in spin-in-12 duration-500">
           <div class="relative h-2/3 w-2/3">
-             <svg class="w-full h-full text-slate-900 drop-shadow-xl" fill="currentColor" viewBox="0 0 24 24">
-               <circle cx="12" cy="12" r="9" />
-               <path d="M12 7v2m0 6v2m-5-5h2m6 0h2" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-             </svg>
+             <img src="bomb.png" class="w-full h-full drop-shadow-xl" />
              <div class="absolute -top-1 -right-1 h-3 w-3 bg-orange-500 rounded-full animate-pulse shadow-[0_0_10px_#f97316]"></div>
           </div>
         </div>

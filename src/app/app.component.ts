@@ -22,6 +22,7 @@ export class AppComponent {
   betAmount = 2.00;
   numberOfMines = 3;
   gridSize = 5;
+  selectionLimit = 0;
   
   // Game state
   gameState: GameState = {
@@ -31,6 +32,8 @@ export class AppComponent {
     revealedTiles: 0,
     currentMultiplier: 0,
     potentialPayout: 0
+    ,picksMade: 0
+    ,selectionLimit: 0
   };
   
   tiles: Tile[] = [];
@@ -101,6 +104,8 @@ export class AppComponent {
       revealedTiles: 0,
       currentMultiplier: 0,
       potentialPayout: this.betAmount
+      ,picksMade: 0
+      ,selectionLimit: this.selectionLimit || 0
     };
     
     this.initializeGrid();
@@ -111,8 +116,13 @@ export class AppComponent {
     if (!this.gameState.isPlaying || tile.revealed || this.gameState.gameOver) {
       return;
     }
-    
+    // Enforce selection limit (if set)
+    if (this.gameState.selectionLimit && (this.gameState.picksMade ?? 0) >= this.gameState.selectionLimit) {
+      return;
+    }
+
     tile.revealed = true;
+    this.gameState.picksMade = (this.gameState.picksMade ?? 0) + 1;
     
     if (tile.isMine) {
       // Game over - reveal all mines
@@ -137,7 +147,7 @@ export class AppComponent {
   
   cashOut() {
     if (!this.gameState.isPlaying) return;
-    
+
     this.balance += this.gameState.potentialPayout;
     this.gameState.isPlaying = false;
     this.gameState.won = true;
@@ -151,6 +161,8 @@ export class AppComponent {
       revealedTiles: 0,
       currentMultiplier: 0,
       potentialPayout: 0
+      ,picksMade: 0
+      ,selectionLimit: 0
     };
     this.initializeGrid();
   }
@@ -170,6 +182,13 @@ export class AppComponent {
   setMineCount(count: number) {
     if (!this.gameState.isPlaying) {
       this.numberOfMines = count;
+    }
+  }
+
+  setSelectionLimit(count: number) {
+    if (!this.gameState.isPlaying) {
+      this.selectionLimit = count;
+      this.gameState.selectionLimit = count;
     }
   }
   
