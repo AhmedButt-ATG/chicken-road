@@ -23,7 +23,7 @@ export interface GameState {
 export class ControlPanelComponent {
   @Input() balance: number = 0;
   @Input() betAmount: number = 0;
-  @Input() numberOfMines: number = 0;
+  @Input() numberOfMines: number = 3;
   @Input() gridSize: number = 0;
   @Input() gameState!: GameState;
   @Input() soundEnabled: boolean = true;
