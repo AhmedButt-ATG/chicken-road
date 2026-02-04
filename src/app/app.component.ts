@@ -6,6 +6,7 @@ import { GameHeaderComponent } from './components/game-header/game-header.compon
 import { ControlPanelComponent, GameState } from './components/control-panel/control-panel.component';
 import { GameStatusComponent } from './components/game-status/game-status.component';
 import { GameGridComponent, Tile } from './components/game-grid/game-grid.component';
+import { MinesApiService } from './service/mines-api.service';
 
 @Component({
   selector: 'app-root',
@@ -23,6 +24,9 @@ export class AppComponent {
   numberOfMines = 3;
   gridSize = 5;
   selectionLimit = 0;
+  requestId: string = '';
+  
+  constructor(private minesApiService: MinesApiService) {}
   
   // Game state
   gameState: GameState = {
@@ -96,20 +100,42 @@ export class AppComponent {
       return;
     }
     
-    this.balance -= this.betAmount;
-    this.gameState = {
-      isPlaying: true,
-      gameOver: false,
-      won: false,
-      revealedTiles: 0,
-      currentMultiplier: 0,
-      potentialPayout: this.betAmount
-      ,picksMade: 0
-      ,selectionLimit: this.selectionLimit || 0
+    // Call payment request API
+    const payload = {
+      customerId: 15,
+      source: 'MINES',
+      amount: this.betAmount
     };
     
-    this.initializeGrid();
-    this.placeMines();
+    this.minesApiService.createPaymentRequest(payload).subscribe({
+      next: (response) => {
+        if (response.responseCode === 200) {
+          // Save the request ID for later use
+          this.requestId = response.data;
+          
+          this.balance -= this.betAmount;
+          this.gameState = {
+            isPlaying: true,
+            gameOver: false,
+            won: false,
+            revealedTiles: 0,
+            currentMultiplier: 0,
+            potentialPayout: this.betAmount
+            ,picksMade: 0
+            ,selectionLimit: this.selectionLimit || 0
+          };
+          
+          this.initializeGrid();
+          // Don't place mines on client side, let API determine the result
+        } else {
+          alert(response.errorMessage || 'Failed to start game');
+        }
+      },
+      error: (error) => {
+        console.error('Error starting game:', error);
+        alert('Failed to start game. Please try again.');
+      }
+    });
   }
   
   revealTile(tile: Tile) {
@@ -121,36 +147,72 @@ export class AppComponent {
       return;
     }
 
-    tile.revealed = true;
-    this.gameState.picksMade = (this.gameState.picksMade ?? 0) + 1;
-    
-    if (tile.isMine) {
-      // Game over - reveal all mines
-      this.gameState.gameOver = true;
-      this.gameState.isPlaying = false;
-      this.tiles.forEach(t => {
-        if (t.isMine) t.revealed = true;
-      });
-    } else {
-      // Safe tile
-      this.gameState.revealedTiles++;
-      this.gameState.currentMultiplier = this.calculateMultiplier(this.gameState.revealedTiles);
-      this.gameState.potentialPayout = this.betAmount * this.gameState.currentMultiplier;
-      
-      // Check if all safe tiles are revealed
-      const totalSafeTiles = (this.gridSize * this.gridSize) - this.numberOfMines;
-      if (this.gameState.revealedTiles === totalSafeTiles) {
-        this.cashOut();
+    // Call bet API to determine if it's a bomb or diamond
+    this.minesApiService.placeBet().subscribe({
+      next: (response) => {
+        if (response.responseCode === 200) {
+          tile.revealed = true;
+          this.gameState.picksMade = (this.gameState.picksMade ?? 0) + 1;
+          
+          if (response.data.type === 'BOMB') {
+            // Hit a mine
+            tile.isMine = true;
+            this.gameState.gameOver = true;
+            this.gameState.isPlaying = false;
+            // Reveal all mines
+            this.tiles.forEach(t => {
+              if (t.isMine) t.revealed = true;
+            });
+          } else {
+            // Safe tile (DIAMOND)
+            tile.isMine = false;
+            this.gameState.revealedTiles++;
+            this.gameState.currentMultiplier = this.calculateMultiplier(this.gameState.revealedTiles);
+            this.gameState.potentialPayout = this.betAmount * this.gameState.currentMultiplier;
+            
+            // Check if all safe tiles are revealed
+            const totalSafeTiles = (this.gridSize * this.gridSize) - this.numberOfMines;
+            if (this.gameState.revealedTiles === totalSafeTiles) {
+              this.cashOut();
+            }
+          }
+        } else {
+          alert(response.errorMessage || 'Bet failed');
+        }
+      },
+      error: (error) => {
+        console.error('Error placing bet:', error);
+        alert('Failed to place bet. Please try again.');
       }
-    }
+    });
   }
   
   cashOut() {
     if (!this.gameState.isPlaying) return;
 
-    this.balance += this.gameState.potentialPayout;
-    this.gameState.isPlaying = false;
-    this.gameState.won = true;
+    // Call checkout API
+    const payload = {
+      customerId: 15,
+      requestId: this.requestId,
+      source: 'MINES',
+      amount: this.gameState.potentialPayout
+    };
+    
+    this.minesApiService.checkout(payload).subscribe({
+      next: (response) => {
+        if (response.responseCode === 200) {
+          this.balance += this.gameState.potentialPayout;
+          this.gameState.isPlaying = false;
+          this.gameState.won = true;
+        } else {
+          alert(response.errorMessage || 'Checkout failed');
+        }
+      },
+      error: (error) => {
+        console.error('Error cashing out:', error);
+        alert('Failed to cash out. Please try again.');
+      }
+    });
   }
   
   resetGame() {
