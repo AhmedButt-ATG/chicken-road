@@ -1,15 +1,42 @@
-.selected {
-  @apply border-sky-400/50 bg-sky-400/20 text-sky-50 shadow-lg shadow-sky-500/15;
+// TILE BASE STYLES
+.tile-base {
+  @apply aspect-square rounded-lg border border-white/5 bg-slate-800/50 text-[11px] font-bold 
+         text-slate-400 transition-all duration-150 hover:bg-slate-700 sm:text-sm active:scale-95;
 }
 
-.drawing {
-  @apply border-amber-300/60 bg-amber-300/20 text-amber-50 shadow-lg shadow-amber-400/20;
+.tile-selected {
+  @apply border-cyan-500/50 bg-cyan-500/20 text-cyan-200 shadow-[0_0_10px_rgba(6,182,212,0.2)];
 }
 
-.hit {
-  @apply border-emerald-400/60 bg-emerald-400/20 text-emerald-50 shadow-lg shadow-emerald-400/20;
+.tile-drawing {
+  @apply border-amber-400 bg-amber-400/30 text-white animate-pulse;
 }
 
-.miss {
-  @apply border-rose-400/50 bg-rose-400/15 text-rose-100;
+.tile-hit {
+  @apply border-emerald-500 bg-emerald-500 text-slate-950 scale-105 z-10 shadow-[0_0_15px_rgba(16,185,129,0.5)];
+}
+
+.tile-miss {
+  @apply opacity-40 grayscale;
+}
+
+// BUTTONS
+.btn-util {
+  @apply rounded-lg bg-slate-800 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-300 hover:bg-slate-700 disabled:opacity-30;
+}
+
+.btn-play {
+  @apply rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-1.5 text-xs font-black uppercase text-white 
+         shadow-lg shadow-cyan-500/20 transition-transform active:scale-95 disabled:grayscale disabled:opacity-50;
+}
+
+.btn-auto {
+  @apply flex-1 rounded-lg border border-white/10 bg-white/5 py-2 text-xs font-bold text-slate-300 hover:bg-white/10;
+}
+
+// CUSTOM SCROLLBAR
+.custom-scroll {
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 }
