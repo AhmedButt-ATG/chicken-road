@@ -1,102 +1,80 @@
-<section class="relative min-h-screen overflow-hidden bg-[#05070a] px-2 py-6 text-slate-100 font-sans selection:bg-cyan-500/30">
-  <div class="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-cyan-600/10 blur-[120px]"></div>
-  <div class="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-purple-600/10 blur-[120px]"></div>
+<section class="perspective-container relative min-h-screen overflow-hidden bg-[#030508] px-2 py-8 text-slate-100 font-sans">
+  <div class="pointer-events-none absolute -top-24 -left-24 h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-[140px]"></div>
+  <div class="pointer-events-none absolute -bottom-24 -right-24 h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[140px]"></div>
 
-  <div class="relative mx-auto max-w-5xl">
+  <div class="relative mx-auto max-w-6xl">
     
-    <header class="mb-6 flex items-center justify-between rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl shadow-2xl">
+    <header class="header-3d mb-8 flex items-center justify-between rounded-[2rem] border-t border-white/20 bg-gradient-to-b from-white/10 to-white/5 p-6 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
       <div class="flex items-center gap-4">
- 
-        <div>
-          <h1 class="bg-gradient-to-r from-white via-cyan-200 to-slate-400 bg-clip-text text-2xl font-black uppercase tracking-tighter text-transparent">Keno</h1>
-   
+        <div class="flex flex-col">
+          <h1 class="text-4xl font-[1000] italic tracking-tighter text-white drop-shadow-[0_2px_0_#0ea5e9]">KENO</h1>
+          <span class="text-[9px] font-black uppercase tracking-[0.4em] text-cyan-500/60">High Stakes Engine</span>
         </div>
       </div>
       
-      <div class="flex gap-6">
+      <div class="flex gap-10">
         <div class="text-right">
-          <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Last Payout</p>
-          <p class="text-2xl font-mono font-black text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.3)]">{{ currentPayout | number:'1.0-0' }}x</p>
+          <p class="text-[10px] font-bold uppercase text-slate-400">Last Payout</p>
+          <p class="text-3xl font-mono font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.4)]">{{ currentPayout | number:'1.0-0' }}x</p>
         </div>
-        <div class="hidden h-10 w-[1px] bg-white/10 sm:block"></div>
         <div class="text-right">
-          <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Active Spots</p>
-          <p class="text-2xl font-mono font-black text-white">{{ selectedNumbers.length }}<span class="text-slate-600">/10</span></p>
+          <p class="text-[10px] font-bold uppercase text-slate-400">Spots</p>
+          <p class="text-3xl font-mono font-black text-white">{{ selectedNumbers.length }}<span class="text-slate-600">/10</span></p>
         </div>
       </div>
     </header>
 
-    <div class="grid gap-6 lg:grid-cols-12">
+    <div class="grid gap-8 lg:grid-cols-12">
       
-      <div class="lg:col-span-8 space-y-4">
+      <div class="lg:col-span-8 space-y-6">
         
-        <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/[0.03] border border-white/10 p-3 backdrop-blur-md">
-          <div class="flex items-center gap-2">
-            <button (click)="quickPick()" [disabled]="isInteractionLocked" class="btn-util">
-              <span>Quick 10</span>
-            </button>
-            <button (click)="clearBoard()" [disabled]="isInteractionLocked" class="btn-util-alt">Clear</button>
+        <div class="control-panel-3d flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#0f121a] border-t border-white/10 p-4 shadow-2xl">
+          <div class="flex items-center gap-3">
+            <button (click)="quickPick()" [disabled]="isInteractionLocked" class="btn-3d-secondary">QUICK PICK</button>
+            <button (click)="clearBoard()" [disabled]="isInteractionLocked" class="btn-3d-danger">RESET</button>
           </div>
           
-          <div class="flex items-center gap-3">
-            <div class="group flex items-center bg-black/60 rounded-xl px-4 py-2 border border-white/10 transition-all focus-within:border-cyan-500/50">
-              <span class="text-[10px] font-black text-slate-500 mr-3">Bet</span>
-              <input [(ngModel)]="betAmount" type="number" class="w-16 bg-transparent text-lg font-black outline-none text-cyan-400">
+          <div class="flex items-center gap-4">
+            <div class="relative bg-black/60 rounded-xl px-4 py-2 border-b-2 border-cyan-500/30">
+              <span class="text-[10px] font-black text-slate-500 block uppercase">Bet Amount</span>
+              <input [(ngModel)]="betAmount" type="number" class="w-20 bg-transparent text-xl font-black outline-none text-cyan-400">
             </div>
-            <button (click)="play()" [disabled]="!canPlay" class="btn-play-hero">
-              <span class="relative z-10">PLACE BET</span>
-              <div class="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-600 opacity-0 transition-opacity group-hover:opacity-100"></div>
+            <button (click)="play()" [disabled]="!canPlay" class="btn-3d-primary">
+              PLACE BET
             </button>
           </div>
         </div>
 
-        <div class="relative grid grid-cols-8 gap-2 sm:grid-cols-10 bg-white/[0.02] p-4 rounded-[2rem] border border-white/5 shadow-inner">
-          <button
-            *ngFor="let value of boardNumbers; trackBy: trackByNumber"
-            (click)="toggleNumber(value)"
-            [disabled]="isInteractionLocked"
-            class="tile-modern"
-            [ngClass]="getTileClasses(value)"
-          >
-            {{ value }}
-          </button>
+        <div class="board-3d-wrapper">
+          <div class="grid grid-cols-8 gap-3 sm:grid-cols-10 bg-[#0a0c14] p-6 rounded-[2.5rem] border border-white/5 shadow-[inset_0_4px_20px_rgba(0,0,0,0.8)]">
+            <button
+              *ngFor="let value of boardNumbers; trackBy: trackByNumber"
+              (click)="toggleNumber(value)"
+              [disabled]="isInteractionLocked"
+              class="tile-3d"
+              [ngClass]="getTileClasses(value)"
+            >
+              <span class="relative z-10">{{ value }}</span>
+            </button>
+          </div>
         </div>
 
-        <div class="overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500/10 via-transparent to-transparent border-l-4 border-cyan-500 p-4">
-           <p class="text-sm font-bold tracking-wide text-cyan-100 uppercase italic">{{ statusMessage }}</p>
-        </div>
       </div>
 
       <div class="lg:col-span-4 space-y-6">
-        
-        <div class="rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-transparent p-5">
-          <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 flex items-center gap-2">
-            <span class="h-1.5 w-1.5 rounded-full bg-purple-500"></span> Auto-Run Series
-          </h3>
-          <div class="flex gap-3">
-            <button (click)="startAutoPlay(5)" [disabled]="!canPlay" class="btn-auto-modern">5 <small class="opacity-50">RNDS</small></button>
-            <button (click)="startAutoPlay(10)" [disabled]="!canPlay" class="btn-auto-modern">10 <small class="opacity-50">RNDS</small></button>
-          </div>
-        </div>
-
-        <div class="rounded-3xl border border-white/10 bg-[#0a0c14]/80 p-5 backdrop-blur-xl">
-          <div class="mb-4 flex items-center justify-between">
-            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Paytable</h3>
-            <span class="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold text-cyan-400 border border-cyan-500/20">
-              {{paytableSpotCount}} SPOTS
-            </span>
-          </div>
-          <div class="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scroll">
+        <div class="card-3d rounded-3xl border-t border-white/10 bg-[#0f121a] p-6 shadow-2xl">
+          <h3 class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Strategy Matrix</h3>
+          <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scroll">
             <div *ngFor="let row of paytableEntries" 
-                 class="flex justify-between items-center py-2.5 px-4 rounded-xl transition-all duration-300 border border-transparent"
-                 [ngClass]="isPaytableHit(row.matches) ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.1)] scale-[1.02]' : 'bg-white/[0.02] text-slate-400 hover:bg-white/[0.04]'">
-              <span class="text-xs font-bold">{{ row.matches }} <span class="text-[10px] opacity-50 uppercase ml-1">Hits</span></span>
-              <span class="font-mono font-black">{{ row.multiplier }}x</span>
+                 class="pay-row-3d flex justify-between items-center py-3 px-5 rounded-xl border border-white/5 bg-black/20"
+                 [ngClass]="{'pay-row-3d-active': isPaytableHit(row.matches)}">
+              <span class="text-xs font-bold">{{ row.matches }} Hits</span>
+              <span class="font-mono font-black text-cyan-400">{{ row.multiplier }}x</span>
             </div>
           </div>
         </div>
-
       </div>
+
     </div>
   </div>
 </section>
