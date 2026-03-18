@@ -1,3 +1,12 @@
+.animate-toast-pop {
+  animation: toast-pop 0.4s cubic-bezier(0.4, 0.8, 0.2, 1);
+}
+
+@keyframes toast-pop {
+  0% { opacity: 0; transform: translateY(-40px) scale(0.95); }
+  60% { opacity: 1; transform: translateY(0) scale(1.05); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
 .perspective-container { perspective: 1500px; }
 
 .board-3d-wrapper {

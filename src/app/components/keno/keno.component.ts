@@ -13,6 +13,8 @@ export type GameStatus = 'idle' | 'drawing' | 'results';
   styleUrl: './keno.component.scss'
 })
 export class KenoComponent {
+  showResultToast = false;
+  resultToastMessage = '';
   isControlPanelCollapsed = false;
   private readonly kenoService = inject(KenoService);
   readonly boardNumbers = this.kenoService.getBoardNumbers();
@@ -93,7 +95,6 @@ export class KenoComponent {
     this.winningNumberSet = new Set(this.winningNumbers);
     this.revealedWinningNumbers = [];
     this.revealedWinningNumberSet.clear();
-    
     for (const num of this.winningNumbers) {
       this.revealedWinningNumbers.push(num);
       this.revealedWinningNumberSet.add(num);
@@ -105,6 +106,11 @@ export class KenoComponent {
     this.currentPayout = this.kenoService.calculatePayout(this.selectedNumbers.length, this.matchedNumbers.length, this.betAmount);
     this.gameStatus = 'results';
     this.statusMessage = this.currentPayout > 0 ? `WIN: ${this.currentPayout}x!` : `NO MATCH`;
+
+    // Show result toast
+    this.resultToastMessage = this.currentPayout > 0 ? `🎉 WIN: ${this.currentPayout}x!` : 'No Match. Try Again!';
+    this.showResultToast = true;
+    setTimeout(() => { this.showResultToast = false; }, 2600);
   }
 
   private resetRoundState() {
