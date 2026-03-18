@@ -25,7 +25,7 @@ export class KenoComponent {
   betAmount = 1;
   currentPayout = 0;
   statusMessage = 'SELECT UP TO 10 SPOTS';
-  
+  balance = 1000;
   isAutoPlaying = false;
   currentAutoRound = 0;
   autoPlayRounds = 0;
