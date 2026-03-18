@@ -13,6 +13,7 @@ export type GameStatus = 'idle' | 'drawing' | 'results';
   styleUrl: './keno.component.scss'
 })
 export class KenoComponent {
+  isControlPanelCollapsed = false;
   private readonly kenoService = inject(KenoService);
   readonly boardNumbers = this.kenoService.getBoardNumbers();
   readonly maxSpots = 10;
