@@ -22,10 +22,30 @@
       </div>
     </header>
 
+
     <div class="grid gap-6 lg:grid-cols-12">
-      
+      <!-- On mobile, control bar is above the board; on desktop, below -->
       <div class="lg:col-span-8 space-y-4">
-        
+        <!-- Control bar for mobile (visible on mobile, hidden on lg+) -->
+        <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#0f121a] border-b-4 border-black/40 p-4 shadow-2xl mb-2 lg:hidden">
+          <div class="flex gap-2">
+            <button (click)="quickPick()" [disabled]="isInteractionLocked" class="btn-game-secondary">QUICK PICK</button>
+            <button (click)="clearBoard()" [disabled]="isInteractionLocked" class="btn-game-danger">CLEAR</button>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="flex flex-col">
+              <span class="text-[10px] font-black text-slate-500 uppercase ml-1">BET</span>
+              <div class="flex items-center bg-black/60 rounded-xl px-3 border border-white/10">
+                <span class="text-cyan-500 font-bold">$</span>
+                <input [(ngModel)]="betAmount" type="number" class="w-16 bg-transparent py-2 text-lg font-black outline-none text-white text-center">
+              </div>
+            </div>
+            <button (click)="play()" [disabled]="!canPlay" class="btn-game-main">
+              START DRAW
+            </button>
+          </div>
+        </div>
+
         <div class="board-3d-wrapper relative group">
           <div class="absolute inset-0 pointer-events-none rounded-[2rem] z-30 overflow-hidden opacity-10">
             <div class="h-full w-full bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%]"></div>
@@ -44,12 +64,12 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#0f121a] border-b-4 border-black/40 p-4 shadow-2xl">
+        <!-- Control bar for desktop (hidden on mobile, visible on lg+) -->
+        <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#0f121a] border-b-4 border-black/40 p-4 shadow-2xl mt-2 hidden lg:flex">
           <div class="flex gap-2">
             <button (click)="quickPick()" [disabled]="isInteractionLocked" class="btn-game-secondary">QUICK PICK</button>
             <button (click)="clearBoard()" [disabled]="isInteractionLocked" class="btn-game-danger">CLEAR</button>
           </div>
-          
           <div class="flex items-center gap-4">
             <div class="flex flex-col">
               <span class="text-[10px] font-black text-slate-500 uppercase ml-1">BET</span>
