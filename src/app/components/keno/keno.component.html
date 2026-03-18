@@ -57,7 +57,7 @@
                   <input [(ngModel)]="betAmount" type="number" class="w-16 bg-transparent py-2 text-lg font-black outline-none text-white text-center">
                 </div>
               </div>
-              <button (click)="play()" [disabled]!="canPlay" class="btn-game-main">
+              <button (click)="play()" [disabled]="!canPlay" class="btn-game-main">
                 START DRAW
               </button>
             </div>
