@@ -169,13 +169,9 @@ class ChickenRoadEngine {
     private readonly state: GameStateStore,
     private readonly difficultyMap: Record<Difficulty, DifficultyConfig>
   ) {
-    // Load chicken from multiple reliable CDN sources
-    this.chickenImg = loadImage(
-      'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Chicken/3D/chicken_3d.png'
-    );
-    this.chickenImgAlt = loadImage(
-      'https://em-content.zobj.net/source/google/387/chicken_1f414.png'
-    );
+    // Use local public asset for chicken, fallback to emoji if not loaded
+    this.chickenImg = loadImage('/chiken.png');
+    this.chickenImgAlt = loadImage('https://em-content.zobj.net/source/google/387/chicken_1f414.png');
 
     this.resize(this.width, this.height);
     this.resetRunEntities();
@@ -502,11 +498,12 @@ class ChickenRoadEngine {
     this.ctx.scale(jumpScale, jumpScale);
 
     // Try to draw the loaded image
-    const img = this.chickenImg.complete && this.chickenImg.naturalWidth > 0
-      ? this.chickenImg
-      : this.chickenImgAlt.complete && this.chickenImgAlt.naturalWidth > 0
-        ? this.chickenImgAlt
-        : null;
+    let img: HTMLImageElement | null = null;
+    if (this.chickenImg.complete && this.chickenImg.naturalWidth > 0) {
+      img = this.chickenImg;
+    } else if (this.chickenImgAlt.complete && this.chickenImgAlt.naturalWidth > 0) {
+      img = this.chickenImgAlt;
+    }
 
     if (img) {
       // Slight wobble on the chicken image
@@ -519,11 +516,19 @@ class ChickenRoadEngine {
       this.ctx.drawImage(img, -size / 2, -size / 2, size, size);
       this.ctx.shadowBlur = 0;
     } else {
-      // Fallback: draw a simple emoji chicken using canvas text
-      this.ctx.font = `${size * 0.9}px serif`;
-      this.ctx.textAlign = 'center';
-      this.ctx.textBaseline = 'middle';
-      this.ctx.fillText('🐔', 0, 0);
+      // Fallback: draw a yellow circle chicken
+      this.ctx.fillStyle = '#fef08a';
+      this.ctx.beginPath();
+      this.ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.fillStyle = '#fb7185';
+      this.ctx.beginPath();
+      this.ctx.arc(-size * 0.18, -size * 0.18, size * 0.18, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.fillStyle = '#0f172a';
+      this.ctx.beginPath();
+      this.ctx.arc(-size * 0.22, 0, size * 0.08, 0, Math.PI * 2);
+      this.ctx.fill();
     }
 
     this.ctx.restore();
