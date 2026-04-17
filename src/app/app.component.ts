@@ -1,3 +1,27 @@
+
+// ── Image cache ──────────────────────────────────────────────────────────────
+const imageCache = new Map<string, HTMLImageElement>();
+const EMPTY_IMAGE = {
+  complete: false,
+  naturalWidth: 0,
+} as HTMLImageElement;
+
+function loadImage(src: string): HTMLImageElement {
+  // Vite/Angular SSR executes module top-level code in Node where Image is undefined.
+  if (typeof window === 'undefined' || typeof Image === 'undefined') {
+    return EMPTY_IMAGE;
+  }
+
+  if (imageCache.has(src)) return imageCache.get(src)!;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = src;
+  imageCache.set(src, img);
+  return img;
+}
+
+// Preload car-right image for rightward cars
+const CAR_RIGHT_IMG = loadImage('/car-right.png');
 import {
   AfterViewInit,
   Component,
@@ -111,17 +135,6 @@ class GameStateStore {
   }
 }
 
-// ── Image cache ──────────────────────────────────────────────────────────────
-const imageCache = new Map<string, HTMLImageElement>();
-
-function loadImage(src: string): HTMLImageElement {
-  if (imageCache.has(src)) return imageCache.get(src)!;
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.src = src;
-  imageCache.set(src, img);
-  return img;
-}
 
 // ── Asset URLs ────────────────────────────────────────────────────────────────
 // Chicken sprite sheet (walk / idle frames from OpenGameArt / itch.io CDN)
@@ -452,33 +465,39 @@ class ChickenRoadEngine {
       this.ctx.translate(v.x + v.width / 2, v.y + v.height / 2);
       if (v.direction === -1) this.ctx.scale(-1, 1);
 
-      // Card-shaped vehicle body
-      this.ctx.shadowColor = v.color;
-      this.ctx.shadowBlur = 10;
-      this.ctx.fillStyle = v.color;
-      this.roundRect(-v.width / 2, -v.height / 2, v.width, v.height, 8);
-      this.ctx.fill();
-      this.ctx.shadowBlur = 0;
+      // Use car-right.png for rightward cars
+      if (v.kind === 'car' && v.direction === 1 && CAR_RIGHT_IMG.complete && CAR_RIGHT_IMG.naturalWidth > 0) {
+        // Draw image centered
+        this.ctx.drawImage(CAR_RIGHT_IMG, -v.width / 2, -v.height / 2, v.width, v.height);
+      } else {
+        // Card-shaped vehicle body
+        this.ctx.shadowColor = v.color;
+        this.ctx.shadowBlur = 10;
+        this.ctx.fillStyle = v.color;
+        this.roundRect(-v.width / 2, -v.height / 2, v.width, v.height, 8);
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
 
-      // Card inner border
-      this.ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-      this.ctx.lineWidth = 1.5;
-      this.roundRect(-v.width / 2 + 3, -v.height / 2 + 3, v.width - 6, v.height - 6, 5);
-      this.ctx.stroke();
+        // Card inner border
+        this.ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        this.ctx.lineWidth = 1.5;
+        this.roundRect(-v.width / 2 + 3, -v.height / 2 + 3, v.width - 6, v.height - 6, 5);
+        this.ctx.stroke();
 
-      // Card suit symbol
-      const suit = CARD_SUIT_SYMBOLS[v.lane % 4];
-      const suitColor = suit === '♥' || suit === '♦' ? '#fca5a5' : '#bfdbfe';
-      this.ctx.fillStyle = suitColor;
-      this.ctx.font = `bold ${v.height * 0.65}px serif`;
-      this.ctx.textAlign = 'center';
-      this.ctx.textBaseline = 'middle';
-      this.ctx.fillText(suit, 0, 0);
+        // Card suit symbol
+        const suit = CARD_SUIT_SYMBOLS[v.lane % 4];
+        const suitColor = suit === '♥' || suit === '♦' ? '#fca5a5' : '#bfdbfe';
+        this.ctx.fillStyle = suitColor;
+        this.ctx.font = `bold ${v.height * 0.65}px serif`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(suit, 0, 0);
 
-      // Headlights
-      this.ctx.fillStyle = '#fef9c3';
-      this.ctx.fillRect(v.width / 2 - 6, -v.height / 2 + 5, 4, 5);
-      this.ctx.fillRect(v.width / 2 - 6, v.height / 2 - 10, 4, 5);
+        // Headlights
+        this.ctx.fillStyle = '#fef9c3';
+        this.ctx.fillRect(v.width / 2 - 6, -v.height / 2 + 5, 4, 5);
+        this.ctx.fillRect(v.width / 2 - 6, v.height / 2 - 10, 4, 5);
+      }
 
       this.ctx.restore();
     }
