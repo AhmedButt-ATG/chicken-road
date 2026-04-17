@@ -1,1 +1,158 @@
-<app-keno></app-keno>
+<main class="game-shell min-h-screen px-3 py-4 sm:px-6 lg:px-10">
+  <section class="mx-auto flex w-full max-w-6xl flex-col gap-4">
+
+    <!-- ── Header ─────────────────────────────────────────────────── -->
+    <header class="top-bar">
+      <div class="header-grid">
+
+        <div class="metric-card">
+          <span class="metric-label">Balance</span>
+          <span class="metric-value">${{ state.balance.toFixed(2) }}</span>
+        </div>
+
+        <div class="metric-card center-card">
+          <div class="brand">
+            <img
+              src="https://em-content.zobj.net/source/google/387/chicken_1f414.png"
+              alt="chicken"
+              class="brand-chicken"
+              (error)="$any($event.target).style.display='none'"
+            />
+            <div>
+              <p class="brand-title">{{ gameTitle }}</p>
+              <p class="brand-sub">Arcade Risk Run</p>
+            </div>
+            <img
+              src="https://em-content.zobj.net/source/google/387/chicken_1f414.png"
+              alt="chicken"
+              class="brand-chicken flip"
+              (error)="$any($event.target).style.display='none'"
+            />
+          </div>
+        </div>
+
+        <div class="metric-card right-card">
+          <span class="metric-label">Multiplier</span>
+          <span class="metric-value multiplier-val">{{ state.currentMultiplier.toFixed(2) }}x</span>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- ── Stage ──────────────────────────────────────────────────── -->
+    <section class="stage-wrapper">
+      <div class="canvas-wrap">
+
+        <canvas
+          #gameCanvas
+          class="game-canvas"
+          (click)="onCanvasAction($event)"
+          (touchstart)="onCanvasAction($event)"
+        ></canvas>
+
+        <!-- Overlays (pointer-events: none so canvas still receives clicks) -->
+        <div class="overlay">
+
+          <div *ngIf="state.status === 'idle'" class="status-card idle-card">
+            <img
+              src="https://em-content.zobj.net/source/google/387/chicken_1f414.png"
+              alt="chicken"
+              class="overlay-chicken"
+              (error)="$any($event.target).style.display='none'"
+            />
+            <h2>Tap To Cross!</h2>
+            <p>Click the road to jump lane-by-lane.</p>
+            <p class="stake-badge">Stake: <strong>${{ stakeAmount.toFixed(2) }}</strong></p>
+            <div class="card-suits-row">
+              <span>♠</span><span class="red">♥</span><span class="red">♦</span><span>♣</span>
+            </div>
+          </div>
+
+          <div *ngIf="state.status === 'game-over'" class="status-card danger-card">
+            <span class="overlay-emoji">💥</span>
+            <h2>Crash! Run Lost</h2>
+            <p>Reached lane <strong>{{ state.laneProgress + 1 }}</strong> of 6.</p>
+            <p class="hint">Hit Restart to try again.</p>
+          </div>
+
+          <div *ngIf="state.status === 'cashed-out'" class="status-card success-card">
+            <span class="overlay-emoji">🏆</span>
+            <h2>Cashed Out!</h2>
+            <p class="payout-amount">${{ state.cashedAmount.toFixed(2) }}</p>
+            <p class="hint">Ready for another run.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Controls ───────────────────────────────────────────────── -->
+    <footer class="controls">
+      <div class="controls-grid">
+
+        <button
+          type="button"
+          class="ctrl-btn start-btn"
+          [disabled]="!canStart"
+          (click)="startGame()"
+        >
+          <span class="btn-icon">🐔</span>
+          <span>Start Run</span>
+        </button>
+
+        <button
+          type="button"
+          class="ctrl-btn cashout-btn"
+          [disabled]="!canCashOut"
+          (click)="cashOut()"
+        >
+          <span class="btn-icon">💰</span>
+          <span>Cash Out (${{ currentPayout.toFixed(2) }})</span>
+        </button>
+
+        <button
+          type="button"
+          class="ctrl-btn restart-btn"
+          [disabled]="state.status === 'running'"
+          (click)="restart()"
+        >
+          <span class="btn-icon">🔄</span>
+          <span>Restart</span>
+        </button>
+
+        <label class="difficulty-wrap" for="difficultySelect">
+          <span class="diff-label">Difficulty</span>
+          <select
+            id="difficultySelect"
+            class="difficulty-select"
+            [value]="state.difficulty"
+            [disabled]="state.status === 'running'"
+            (change)="onDifficultyChange($any($event.target).value)"
+          >
+            <option *ngFor="let option of difficultyOptions" [value]="option">
+              {{ option | titlecase }}
+            </option>
+          </select>
+        </label>
+
+      </div>
+
+      <!-- Lane progress strip -->
+      <div class="lane-strip">
+        <span class="strip-label">Progress</span>
+        <div class="lane-dots">
+          <ng-container *ngFor="let i of [0,1,2,3,4,5]">
+            <div
+              class="lane-dot"
+              [class.reached]="state.laneProgress > i"
+              [class.current]="state.laneProgress === i && state.status === 'running'"
+            ></div>
+            <div *ngIf="i < 5" class="lane-connector" [class.reached]="state.laneProgress > i"></div>
+          </ng-container>
+        </div>
+        <span class="strip-mult">{{ state.currentMultiplier.toFixed(2) }}x</span>
+      </div>
+    </footer>
+
+  </section>
+</main>
