@@ -81,6 +81,7 @@ export class AppComponent implements OnInit, OnDestroy {
   chickenLeft = 0;        // px from left
   chickenJumping = false;
   chickenDead = false;
+  private resolvingJump = false;
 
   // ── Difficulty options ────────────────────────────────────────
   readonly difficultyOptions: Difficulty[] = ['easy', 'medium', 'hard', 'hardcore'];
@@ -254,16 +255,19 @@ export class AppComponent implements OnInit, OnDestroy {
     this.updateCoins();
     this.updateProgress();
     this.resetChicken();
+    this.resolvingJump = false;
     this.cd.markForCheck();
   }
 
   advanceLane(targetIndex?: number): void {
     if (this.status !== 'running') return;
+    if (this.resolvingJump) return;
     if (targetIndex !== undefined && targetIndex !== this.laneProgress) return;
 
     const i = this.laneProgress;
     const config = DIFFICULTY_MAP[this.difficulty];
     const lethal = Math.random() < config.roastChance;
+    this.resolvingJump = true;
 
     // Jump animation
     this.chickenJumping = true;
@@ -273,6 +277,11 @@ export class AppComponent implements OnInit, OnDestroy {
     this.cd.markForCheck();
 
     setTimeout(() => {
+      if (this.status !== 'running') {
+        this.resolvingJump = false;
+        return;
+      }
+
       this.showFire(i, lethal);
 
       if (lethal) {
@@ -288,6 +297,7 @@ export class AppComponent implements OnInit, OnDestroy {
         );
 
         this.cd.markForCheck();
+        this.resolvingJump = false;
       } else {
         this.laneProgress = i + 1;
         this.currentMultiplier = Number(
@@ -310,6 +320,7 @@ export class AppComponent implements OnInit, OnDestroy {
         }
 
         this.cd.markForCheck();
+        this.resolvingJump = false;
       }
     }, 200);
   }
@@ -340,6 +351,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.cashedAmount = 0;
     this.chickenDead = false;
     this.chickenJumping = false;
+    this.resolvingJump = false;
 
     this.buildLanes();
     this.buildProgressDots();

@@ -44,8 +44,9 @@ button:disabled { cursor: not-allowed; opacity: 0.38; }
   flex-direction: column;
   height: 100vh;
   background:
-    radial-gradient(ellipse at 75% 10%, rgba(16,185,129,.12) 0%, transparent 35%),
-    radial-gradient(ellipse at 20% 85%, rgba(99,102,241,.1)  0%, transparent 35%),
+    radial-gradient(ellipse at 75% 10%, rgba(16,185,129,.14) 0%, transparent 35%),
+    radial-gradient(ellipse at 20% 85%, rgba(99,102,241,.12)  0%, transparent 35%),
+    repeating-linear-gradient(120deg, rgba(255,255,255,.01) 0 2px, transparent 2px 14px),
     linear-gradient(160deg, #06091a 0%, #0d1225 55%, #060811 100%);
 }
 
@@ -223,7 +224,9 @@ button:disabled { cursor: not-allowed; opacity: 0.38; }
   flex-direction: column;
   align-items: center;
   position: relative;
-  background: $bg-lane;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.03), transparent 26%),
+    linear-gradient(180deg, #1b2340 0%, #141a2e 45%, #111827 100%);
 
   // subtle top glow
   &::before {
@@ -291,6 +294,7 @@ button:disabled { cursor: not-allowed; opacity: 0.38; }
     box-shadow:
       0 6px 0 #064e1e,
       0 8px 20px rgba(34,197,94,.3),
+      0 0 0 3px rgba(34,197,94,.15),
       inset 0 2px 4px rgba(255,255,255,.13),
       inset 0 -3px 6px rgba(0,0,0,.3);
   }
@@ -302,6 +306,7 @@ button:disabled { cursor: not-allowed; opacity: 0.38; }
     box-shadow:
       0 6px 0 #1e3a8a,
       0 8px 22px rgba(96,165,250,.35),
+      0 0 0 3px rgba(96,165,250,.16),
       inset 0 2px 4px rgba(255,255,255,.14),
       inset 0 -3px 6px rgba(0,0,0,.3);
     animation: coinPulse 1.3s ease-in-out infinite;
@@ -364,9 +369,9 @@ button:disabled { cursor: not-allowed; opacity: 0.38; }
   &.fire-burning {
     opacity: 1;
 
-    .flame-outer { animation: flameOuter .18s ease-in-out infinite alternate; height: 76px; }
-    .flame-mid   { animation: flameMid  .15s ease-in-out infinite alternate; height: 56px; }
-    .flame-core  { animation: flameCore .12s ease-in-out infinite alternate; height: 38px; }
+    .flame-outer { animation: flameOuter .11s ease-in-out infinite alternate; height: 82px; }
+    .flame-mid   { animation: flameMid  .09s ease-in-out infinite alternate; height: 62px; }
+    .flame-core  { animation: flameCore .07s ease-in-out infinite alternate; height: 42px; }
     .flame-glow  { opacity: 1; }
   }
 
@@ -392,19 +397,19 @@ button:disabled { cursor: not-allowed; opacity: 0.38; }
 
 .flame-outer {
   width: 44px;
-  background: linear-gradient(to top, #ef4444 0%, $accent-orange 45%, transparent 100%);
-  filter: blur(2.5px);
+  background: linear-gradient(to top, #7f1d1d 0%, #dc2626 24%, $accent-orange 58%, rgba(253,186,116,.6) 82%, transparent 100%);
+  filter: blur(2.2px);
 }
 
 .flame-mid {
   width: 28px;
-  background: linear-gradient(to top, #fbbf24 0%, $accent-orange 45%, transparent 100%);
-  filter: blur(1.5px);
+  background: linear-gradient(to top, #f97316 0%, #f59e0b 48%, #fde68a 82%, transparent 100%);
+  filter: blur(1.2px);
 }
 
 .flame-core {
   width: 16px;
-  background: linear-gradient(to top, #fef9c3 0%, #fde68a 55%, transparent 100%);
+  background: linear-gradient(to top, #fff7cc 0%, #ffffff 28%, #fde68a 68%, transparent 100%);
 }
 
 .flame-glow {
@@ -427,7 +432,8 @@ button:disabled { cursor: not-allowed; opacity: 0.38; }
   border: 1px solid #080e20;
   box-shadow:
     0 0 14px rgba(0,0,0,.9),
-    inset 0 3px 8px rgba(0,0,0,.95);
+    inset 0 3px 8px rgba(0,0,0,.95),
+    inset 0 -2px 10px rgba(248,113,113,.16);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -466,11 +472,12 @@ button:disabled { cursor: not-allowed; opacity: 0.38; }
   align-items: center;
 }
 
-.chicken-emoji {
-  font-size: 52px;
-  line-height: 1;
+.chicken-img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
   display: block;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,.6));
+  filter: drop-shadow(0 5px 10px rgba(0,0,0,.65));
   animation: chickenBob 1.8s ease-in-out infinite;
 }
 
@@ -482,12 +489,12 @@ button:disabled { cursor: not-allowed; opacity: 0.38; }
 }
 
 // Jump animation
-.chicken-jumping .chicken-emoji {
+.chicken-jumping .chicken-img {
   animation: chickenJump .32s ease-out !important;
 }
 
 // Dead animation
-.chicken-dead .chicken-emoji {
+.chicken-dead .chicken-img {
   animation: chickenDead .55s ease-out forwards !important;
   filter: drop-shadow(0 0 14px rgba(239,68,68,.8));
 }
