@@ -1,16 +1,15 @@
 <div class="shell">
 
-  <!-- ══════════════ TOP BAR ══════════════ -->
+  <!-- ══ TOPBAR ══════════════════════════════════════ -->
   <header class="topbar">
-    <div class="logo">CHICKEN <span class="logo-accent">R🥚AD</span></div>
+    <div class="logo">CHICKEN <b>R🥚AD</b></div>
 
-    <div class="live-bar">
-      <span class="live-dot"></span>
-      Live wins:
-      <span class="live-win-badge" *ngIf="showLiveWin">{{ liveWin }}</span>
+    <div class="live-row">
+      <span class="live-dot"></span>Live wins:
+      <span class="live-win-badge" *ngIf="showLiveWin">{{ liveWinText }}</span>
     </div>
 
-    <div class="online-bar">
+    <div class="live-row">
       <span class="online-dot"></span>
       Online: <strong>{{ onlineCount }}</strong>
     </div>
@@ -18,185 +17,156 @@
     <div class="topbar-right">
       <div class="balance-badge">
         <span class="coin-icon">$</span>
-        <span class="balance-num">{{ balance.toFixed(2) }}</span>
+        <span>{{ balance.toFixed(2) }}</span>
       </div>
     </div>
   </header>
 
-  <!-- ══════════════ GAME AREA ══════════════ -->
-  <section class="game-area" (click)="onGameAreaClick()">
-
-    <!-- Road -->
+  <!-- ══ GAME AREA ════════════════════════════════════ -->
+  <section class="game-area" #gameArea (click)="onAreaClick($event)">
     <div class="road">
 
-      <!-- Start zone / door -->
-      <div class="start-zone">
-        <div class="start-door">
-          <div class="door-arch"></div>
-        </div>
+      <!-- Start zone -->
+      <div class="start-zone" #startZone>
+        <div class="start-door"></div>
       </div>
 
       <!-- Lanes -->
-      <div class="lanes">
+      <div class="lanes-wrap" [class.shift-step]="shiftStepAnim">
         <div
           class="lane"
-          *ngFor="let lane of lanes; trackBy: trackLane"
-          [attr.data-index]="lane.index"
+          *ngFor="let l of lanes; trackBy: trackLane"
+          [id]="'lane' + l.index"
         >
-          <!-- Decorative wall panels -->
-          <div class="wall-panel top-left"></div>
-          <div class="wall-panel top-right"></div>
+          <div class="wall-panel tl"></div>
+          <div class="wall-panel tr"></div>
 
-          <!-- Dashed lane divider (right edge) -->
-          <div class="lane-divider"></div>
-
-          <!-- Multiplier coin -->
-          <div
-            class="coin-slot"
-            (click)="advanceLane(lane.index); $event.stopPropagation()"
-          >
+          <!-- Coin -->
+          <div class="coin-wrap">
             <div
-              class="coin-3d"
-              [class.coin-inactive]="lane.coinState === 'inactive'"
-              [class.coin-active]="lane.coinState === 'active'"
-              [class.coin-current]="lane.coinState === 'current'"
+              class="coin"
+              [class.inactive]="l.coinState === 'inactive'"
+              [class.active]  ="l.coinState === 'active'"
+              [class.current] ="l.coinState === 'current'"
+              (click)="advance(); $event.stopPropagation()"
             >
               <div class="coin-ring">
-                <span class="coin-label">{{ lane.multiplier }}x</span>
+                <span class="coin-label">{{ l.label }}</span>
               </div>
-              <!-- Shine streak -->
               <div class="coin-shine"></div>
             </div>
           </div>
 
-          <!-- Fire pit area -->
+          <!-- Pit + Fire -->
           <div class="pit-area">
-            <!-- Fire -->
             <div
-              class="fire-wrap"
-              [class.fire-burning]="lane.fireVisible"
-              [class.fire-lethal]="lane.fireLethal"
+              class="fire"
+              [class.burning]="l.fireBurning"
+              [class.lethal] ="l.fireLethal"
             >
-              <div class="flame flame-outer"></div>
-              <div class="flame flame-mid"></div>
-              <div class="flame flame-core"></div>
-              <div class="flame-glow"></div>
+              <div class="f-outer"></div>
+              <div class="f-mid"></div>
+              <div class="f-core"></div>
+              <div class="fire-glow"></div>
             </div>
-
-            <!-- Pit hole with grill -->
             <div class="pit-hole">
-              <div class="pit-grill">
-                <span *ngFor="let b of [0,1,2,3,4,5,6]" class="grill-bar"></span>
-              </div>
+              <span class="grill-bar" *ngFor="let g of [0,1,2,3,4,5,6]"></span>
             </div>
           </div>
         </div>
-      </div>
+      </div><!-- /lanes-wrap -->
 
-      <!-- ── Chicken ── -->
+      <!-- Chicken -->
       <div
         class="chicken"
-        [style.left.%]="chickenLeft"
-        [class.chicken-jumping]="chickenJumping"
-        [class.chicken-dead]="chickenDead"
+        #chicken
+        [style.left.px]="chickenLeftPx"
+        [class.jumping]="chickenJumping"
+        [class.dead]   ="chickenDead"
       >
-        <img class="chicken-img" src="/chiken.png" alt="chicken" />
-        <div class="chicken-shadow"></div>
+        <img class="chick-img" src="/chiken.png" alt="chicken" />
+        <div class="chick-shadow"></div>
       </div>
 
-      <!-- ── Particles ── -->
+      <!-- Particles -->
       <div
         class="particle"
-        *ngFor="let p of particles; trackBy: trackParticle"
-        [style.left.%]="p.x"
-        [style.top.%]="p.y"
-        [style.width.px]="p.size"
+        *ngFor="let p of particles; trackBy: trackPart"
+        [style.left.px]="p.cx"
+        [style.top.px] ="p.cy"
+        [style.width.px] ="p.size"
         [style.height.px]="p.size"
         [style.background]="p.color"
-        [style.--dx]="p.dx + '%'"
-        [style.--dy]="p.dy + '%'"
-        [style.animation-duration]="p.duration + 'ms'"
+        [style.--dx]="p.dx + 'px'"
+        [style.--dy]="p.dy + 'px'"
+        [style.animation-duration]="p.dur + 'ms'"
       ></div>
 
       <!-- ── Overlays ── -->
       <div class="overlay-wrap">
 
         <!-- IDLE -->
-        <div class="overlay-card overlay-idle" *ngIf="status === 'idle'">
+        <div class="ov-card idle" *ngIf="status === 'idle'">
           <span class="ov-emoji">🐔</span>
           <h2>Tap To Jump!</h2>
-          <p>Navigate the chicken across 6 fiery lanes.</p>
+          <p>Click anywhere to move the chicken forward.</p>
           <p>Avoid the flames — or cash out early!</p>
           <div class="stake-pill">Stake: <strong>${{ stake.toFixed(2) }}</strong></div>
           <div class="suits-row">
-            <span>♠</span><span class="red">♥</span><span class="red">♦</span><span>♣</span>
+            <span>♠</span><span class="r">♥</span><span class="r">♦</span><span>♣</span>
           </div>
         </div>
 
         <!-- GAME OVER -->
-        <div class="overlay-card overlay-danger" *ngIf="status === 'game-over'">
+        <div class="ov-card danger" *ngIf="status === 'gameover'">
           <span class="ov-emoji">💥</span>
           <h2>Roasted!</h2>
-          <p>Reached lane <strong>{{ laneProgress }}</strong> of 6.</p>
-          <p class="hint-text">Hit Play to retry</p>
+          <p>Reached lane <strong>{{ lane }}</strong> of 6.</p>
+          <p class="hint">Hit Play to try again.</p>
         </div>
 
         <!-- CASHED OUT -->
-        <div class="overlay-card overlay-success" *ngIf="status === 'cashed-out'">
+        <div class="ov-card success" *ngIf="status === 'cashedout'">
           <span class="ov-emoji">🏆</span>
           <h2>Cashed Out!</h2>
           <div class="payout-big">${{ cashedAmount.toFixed(2) }}</div>
-          <p class="hint-text">Ready for another run</p>
+          <p class="hint">Ready for another run.</p>
         </div>
 
       </div>
-    </div>
+    </div><!-- /road -->
 
-    <!-- Road floor strip -->
     <div class="road-floor"></div>
   </section>
 
-  <!-- ══════════════ CONTROLS ══════════════ -->
+  <!-- ══ CONTROLS ══════════════════════════════════════ -->
   <footer class="controls">
 
-    <!-- Row 1: bet / difficulty / actions -->
+    <!-- Row 1 -->
     <div class="ctrl-row">
+      <div class="minmax-pill">MIN <span>3</span> MAX</div>
 
-      <!-- Min / Max pill -->
-      <div class="minmax-pill">
-        <span class="mm-label">MIN</span>
-        <span class="mm-val">3</span>
-        <span class="mm-label">MAX</span>
-      </div>
-
-      <!-- Bet buttons -->
       <button
         class="bet-btn"
         *ngFor="let b of betOptions"
-        [class.bet-selected]="stake === b"
-        (click)="selectBet(b)"
+        [class.sel]="stake === b"
         [disabled]="isRunning"
-      >
-        <span class="bet-coin"></span>{{ b }}
-      </button>
+        (click)="selectBet(b)"
+      ><span class="bet-coin"></span>{{ b }}</button>
 
-      <!-- Difficulty label -->
       <span class="diff-label">Difficulty</span>
-
-      <!-- Difficulty tabs -->
       <div class="diff-tabs">
         <button
           class="diff-tab"
-          *ngFor="let d of difficultyOptions"
-          [class.diff-active]="difficulty === d"
-          (click)="selectDifficulty(d)"
+          *ngFor="let d of diffOptions"
+          [class.active]="diff === d"
           [disabled]="isRunning"
+          (click)="selectDiff(d)"
         >{{ d | titlecase }}</button>
       </div>
 
-      <span class="chance-label">Chance of collision</span>
+      <span class="chance-lbl">Chance of collision</span>
 
-      <!-- Action buttons -->
       <div class="action-btns">
         <!-- Cash out -->
         <button
@@ -204,16 +174,15 @@
           [disabled]="!canCashOut"
           (click)="cashOut(); $event.stopPropagation()"
         >
-          <span class="btn-cashout-main">CASH OUT</span>
-          <span class="btn-cashout-sub">{{ currentPayout.toFixed(2) }} USD</span>
+          <span class="btn-cashout-top">CASH OUT</span>
+          <span class="btn-cashout-sub">{{ payout.toFixed(2) }} USD</span>
         </button>
 
-        <!-- Reset (shown after game ends) -->
+        <!-- Reset (only shown after game ends) -->
         <button
           class="btn-reset"
-          *ngIf="status === 'game-over' || status === 'cashed-out'"
+          *ngIf="status === 'gameover' || status === 'cashedout'"
           (click)="resetGame(); $event.stopPropagation()"
-          title="Reset"
         >↺</button>
 
         <!-- GO / Play -->
@@ -221,34 +190,25 @@
           class="btn-go"
           [disabled]="!canStart"
           (click)="startGame(); $event.stopPropagation()"
-        >
-          {{ status === 'game-over' || status === 'cashed-out' ? 'Play' : 'GO' }}
-        </button>
+        >{{ status === 'gameover' || status === 'cashedout' ? 'Play' : 'GO' }}</button>
       </div>
     </div>
 
     <!-- Row 2: progress strip -->
-    <div class="ctrl-row progress-row">
-      <span class="progress-label">Progress</span>
-
+    <div class="ctrl-row">
+      <span class="progress-lbl">Progress</span>
       <div class="dot-track">
-        <ng-container *ngFor="let dot of progressDots; trackBy: trackDot; let last = last">
+        <ng-container *ngFor="let d of dots; trackBy: trackDot; let last = last">
           <div
             class="prog-dot"
-            [class.dot-reached]="dot.state === 'reached'"
-            [class.dot-current]="dot.state === 'current'"
+            [class.reached]="d.state === 'reached'"
+            [class.current]="d.state === 'current'"
           ></div>
-          <div
-            class="prog-line"
-            *ngIf="!last"
-            [class.line-reached]="dot.state === 'reached'"
-          ></div>
+          <div class="prog-line" *ngIf="!last" [class.reached]="d.state === 'reached'"></div>
         </ng-container>
       </div>
-
-      <span class="mult-display" [style.color]="multiplierColor">{{ multiplierDisplay }}</span>
+      <span class="mult-display" [style.color]="multColor">{{ multLabel }}</span>
     </div>
 
   </footer>
-
 </div>

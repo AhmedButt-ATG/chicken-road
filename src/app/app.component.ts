@@ -1,49 +1,26 @@
 import {
-  Component,
-  OnInit,
-  OnDestroy,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  NgZone,
+  Component, OnInit, OnDestroy, AfterViewInit,
+  ElementRef, ViewChild, ChangeDetectionStrategy,
+  ChangeDetectorRef, NgZone,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-// ── Types ─────────────────────────────────────────────────────────
-export type GameStatus = 'idle' | 'running' | 'game-over' | 'cashed-out';
+export type GameStatus = 'idle' | 'running' | 'gameover' | 'cashedout';
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'hardcore';
 
-export interface DifficultyConfig {
-  roastChance: number;
-  progMult: number;
-}
-
-export interface LaneModel {
+export interface DiffConfig { roastChance: number; progMult: number; }
+export interface LaneVM {
   index: number;
-  multiplier: string;
+  label: string;          
   coinState: 'inactive' | 'active' | 'current';
-  fireVisible: boolean;
+  fireBurning: boolean;
   fireLethal: boolean;
 }
+export interface DotVM { index: number; state: 'idle' | 'reached' | 'current'; }
+export interface Particle { id: number; cx: number; cy: number; dx: number; dy: number; color: string; size: number; dur: number; }
 
-export interface ProgressDot {
-  index: number;
-  state: 'idle' | 'reached' | 'current';
-}
-
-export interface Particle {
-  id: number;
-  x: number;
-  y: number;
-  dx: number;
-  dy: number;
-  color: string;
-  size: number;
-  duration: number;
-}
-
-// ── Constants ─────────────────────────────────────────────────────
 const LANE_COUNT = 6;
-const DIFFICULTY_MAP: Record<Difficulty, DifficultyConfig> = {
+const DIFF: Record<Difficulty, DiffConfig> = {
   easy:     { roastChance: 0.15, progMult: 0.8  },
   medium:   { roastChance: 0.26, progMult: 1.0  },
   hard:     { roastChance: 0.36, progMult: 1.25 },
@@ -58,321 +35,303 @@ const DIFFICULTY_MAP: Record<Difficulty, DifficultyConfig> = {
   styleUrl: './app.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  // ── State ──────────────────────────────────────────────────────
+  @ViewChild('gameArea',  { static: true }) gameAreaRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('startZone', { static: true }) startZoneRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('chicken',   { static: true }) chickenRef!: ElementRef<HTMLDivElement>;
+
   status: GameStatus = 'idle';
   balance = 1000;
-  stake = 50;
-  laneProgress = 0;
-  currentMultiplier = 1.0;
-  difficulty: Difficulty = 'easy';
+  stake   = 50;
+  lane    = 0;    
+  visibleStart = 0; 
+  mult    = 1.0;
+  diff: Difficulty = 'easy';
+  locked  = false; 
   cashedAmount = 0;
-  onlineCount = 3548;
-  liveWin = '';
-  showLiveWin = false;
 
-  // ── Derived UI models ─────────────────────────────────────────
-  lanes: LaneModel[] = [];
-  progressDots: ProgressDot[] = [];
+  lanes: LaneVM[]    = [];
+  dots: DotVM[]      = [];
   particles: Particle[] = [];
 
-  // ── Chicken animation state ───────────────────────────────────
-  chickenLeft = 0;        // px from left
+  chickenLeftPx = 0;
   chickenJumping = false;
-  chickenDead = false;
-  private resolvingJump = false;
+  chickenDead    = false;
+  shiftStepAnim = false;
 
-  // ── Difficulty options ────────────────────────────────────────
-  readonly difficultyOptions: Difficulty[] = ['easy', 'medium', 'hard', 'hardcore'];
-  readonly betOptions = [0.5, 1, 50, 100];
+  onlineCount  = 3548;
+  showLiveWin  = false;
+  liveWinText  = '';
+  readonly betOptions: number[]      = [0.5, 1, 50, 100];
+  readonly diffOptions: Difficulty[] = ['easy', 'medium', 'hard', 'hardcore'];
 
-  // ── Private timers ────────────────────────────────────────────
-  private particleIdCounter = 0;
-  private onlineInterval?: ReturnType<typeof setInterval>;
-  private liveWinTimeout?: ReturnType<typeof setTimeout>;
+  private pId = 0;
+  private onlineTick?: ReturnType<typeof setInterval>;
+  private liveWinTimer?: ReturnType<typeof setTimeout>;
 
-  constructor(
-    private readonly cd: ChangeDetectorRef,
-    private readonly zone: NgZone,
-  ) {}
+  constructor(private cd: ChangeDetectorRef, private zone: NgZone) {}
 
   ngOnInit(): void {
     this.buildLanes();
-    this.buildProgressDots();
-
-    // Fake online counter (outside zone to avoid heavy CD)
+    this.buildDots();
     this.zone.runOutsideAngular(() => {
-      this.onlineInterval = setInterval(() => {
-        this.zone.run(() => {
-          this.onlineCount += Math.floor(Math.random() * 7) - 3;
-          if (this.onlineCount < 3000) this.onlineCount = 3000;
-          this.cd.markForCheck();
-        });
-      }, 2500);
+      this.onlineTick = setInterval(() => this.zone.run(() => {
+        this.onlineCount = Math.max(3000, this.onlineCount + Math.floor(Math.random() * 7) - 3);
+        this.cd.markForCheck();
+      }), 2500);
     });
   }
 
+  ngAfterViewInit(): void {
+    this.chickenLeftPx = this.calcChickenLeft(-1);
+    this.cd.markForCheck();
+  }
+
   ngOnDestroy(): void {
-    clearInterval(this.onlineInterval);
-    clearTimeout(this.liveWinTimeout);
+    clearInterval(this.onlineTick);
+    clearTimeout(this.liveWinTimer);
   }
 
-  // ── Getters ───────────────────────────────────────────────────
-  get isRunning(): boolean { return this.status === 'running'; }
-  get canStart(): boolean  { return this.status !== 'running' && this.balance >= this.stake; }
-  get canCashOut(): boolean { return this.status === 'running'; }
+  get isRunning()  { return this.status === 'running'; }
+  get canStart()   { return this.status !== 'running' && this.balance >= this.stake; }
+  get canCashOut() { return this.status === 'running'; }
+  get payout()     { return +(this.stake * this.mult).toFixed(2); }
+  get multLabel()  { return this.mult.toFixed(2) + 'x'; }
+  get multColor()  { return this.mult > 1.5 ? '#fbbf24' : '#34d399'; }
 
-  get currentPayout(): number {
-    return Number((this.stake * this.currentMultiplier).toFixed(2));
-  }
-
-  get multiplierDisplay(): string {
-    return this.currentMultiplier.toFixed(2) + 'x';
-  }
-
-  get multiplierColor(): string {
-    return this.currentMultiplier > 1.5 ? '#fbbf24' : '#34d399';
-  }
-
-  // ── Build helpers ─────────────────────────────────────────────
   buildLanes(): void {
-    const config = DIFFICULTY_MAP[this.difficulty];
+    const cfg = DIFF[this.diff];
     this.lanes = Array.from({ length: LANE_COUNT }, (_, i) => ({
-      index: i,
-      multiplier: (1 + (i + 1) * 0.18 * config.progMult).toFixed(2),
-      coinState: 'inactive',
-      fireVisible: false,
-      fireLethal: false,
+      index:       i,
+      label:       (1 + (this.visibleStart + i + 1) * 0.18 * cfg.progMult).toFixed(2) + 'x',
+      coinState:   'inactive' as const,
+      fireBurning: false,
+      fireLethal:  false,
     }));
   }
 
-  buildProgressDots(): void {
-    this.progressDots = Array.from({ length: LANE_COUNT }, (_, i) => ({
-      index: i,
-      state: 'idle',
-    }));
+  buildDots(): void {
+    this.dots = Array.from({ length: LANE_COUNT }, (_, i) => ({ index: i, state: 'idle' as const }));
   }
 
-  // ── Coin state sync ───────────────────────────────────────────
-  private updateCoins(): void {
-    for (const lane of this.lanes) {
+  syncCoins(): void {
+    for (const l of this.lanes) {
+      const globalIdx = this.visibleStart + l.index;
       if (this.status === 'running') {
-        if (lane.index < this.laneProgress)       lane.coinState = 'active';
-        else if (lane.index === this.laneProgress) lane.coinState = 'current';
-        else                                       lane.coinState = 'inactive';
+        l.coinState = globalIdx < this.lane ? 'active' : globalIdx === this.lane ? 'current' : 'inactive';
       } else {
-        lane.coinState = lane.index < this.laneProgress ? 'active' : 'inactive';
+        l.coinState = globalIdx < this.lane ? 'active' : 'inactive';
       }
     }
   }
 
-  private updateProgress(): void {
-    for (const dot of this.progressDots) {
-      if (dot.index < this.laneProgress)       dot.state = 'reached';
-      else if (dot.index === this.laneProgress && this.status === 'running') dot.state = 'current';
-      else dot.state = 'idle';
+  syncDots(): void {
+    for (const d of this.dots) {
+      const globalIdx = this.visibleStart + d.index;
+      if (globalIdx < this.lane) d.state = 'reached';
+      else if (globalIdx === this.lane && this.status === 'running') d.state = 'current';
+      else d.state = 'idle';
     }
   }
 
-  private updateMultiplierLabels(): void {
-    const config = DIFFICULTY_MAP[this.difficulty];
-    for (const lane of this.lanes) {
-      lane.multiplier = (1 + (lane.index + 1) * 0.18 * config.progMult).toFixed(2);
+  syncLabels(): void {
+    const cfg = DIFF[this.diff];
+    for (const l of this.lanes) {
+      l.label = (1 + (this.visibleStart + l.index + 1) * 0.18 * cfg.progMult).toFixed(2) + 'x';
     }
   }
 
-  // ── Chicken position ──────────────────────────────────────────
-  getChickenLeft(laneIndex: number): number {
-    // Percentage-based: start zone ~120px wide, each lane is equal fraction of remaining
-    // We'll return a % value relative to game-area width
-    const startZonePct = 13; // ~120px of ~900px
-    if (laneIndex < 0) return startZonePct - 4; // peeking out of door
-    const laneWidthPct = (100 - startZonePct) / LANE_COUNT;
-    return startZonePct + laneIndex * laneWidthPct + laneWidthPct / 2 - 3.8;
+  calcChickenLeft(laneIdx: number): number {
+    const szW   = this.startZoneRef?.nativeElement.offsetWidth ?? 120;
+    const areaW = this.gameAreaRef?.nativeElement.offsetWidth  ?? 900;
+    const laneW = (areaW - szW) / LANE_COUNT;
+    if (laneIdx < 0) return szW - 62;           
+    return szW + laneIdx * laneW + laneW / 2 - 34; 
   }
 
-  private moveChickenTo(laneIndex: number): void {
-    this.chickenLeft = this.getChickenLeft(laneIndex);
+  moveChicken(laneIdx: number): void {
+    this.chickenLeftPx = this.calcChickenLeft(laneIdx);
   }
 
-  private resetChicken(): void {
-    this.chickenLeft = this.getChickenLeft(-1);
+  resetChicken(): void {
     this.chickenJumping = false;
-    this.chickenDead = false;
+    this.chickenDead    = false;
+    this.chickenLeftPx  = this.calcChickenLeft(-1);
   }
 
-  // ── Fire ──────────────────────────────────────────────────────
-  private showFire(laneIndex: number, lethal: boolean): void {
-    const lane = this.lanes[laneIndex];
-    lane.fireVisible = true;
-    lane.fireLethal  = lethal;
+  igniteFire(laneIdx: number, lethal: boolean, durationMs: number): void {
+    const lane = this.lanes[laneIdx];
+    if (!lane) return;
+    lane.fireBurning = false;
+    lane.fireLethal  = false;
+    this.cd.markForCheck();
     setTimeout(() => {
-      lane.fireVisible = false;
-      lane.fireLethal  = false;
+      lane.fireBurning = true;
+      lane.fireLethal  = lethal;
       this.cd.markForCheck();
-    }, lethal ? 700 : 450);
+      setTimeout(() => {
+        lane.fireBurning = false;
+        lane.fireLethal  = false;
+        this.cd.markForCheck();
+      }, durationMs);
+    }, 20); 
   }
 
-  // ── Particles ─────────────────────────────────────────────────
-  private spawnParticles(leftPct: number, topPct: number, colors: string[], count = 18): void {
-    for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const dist  = 4 + Math.random() * 10; // % units
+  spawnParticles(laneIdx: number, colors: string[], count: number): void {
+    const laneEl = document.getElementById(`lane${laneIdx}`);
+    const areaEl = this.gameAreaRef.nativeElement;
+    if (!laneEl) return;
+    const lr = laneEl.getBoundingClientRect();
+    const ar = areaEl.getBoundingClientRect();
+    const cx = lr.left - ar.left + lr.width  / 2;
+    const cy = lr.top  - ar.top  + lr.height * 0.55;
+
+    for (let k = 0; k < count; k++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 40 + Math.random() * 90;
       const p: Particle = {
-        id:       ++this.particleIdCounter,
-        x:        leftPct,
-        y:        topPct,
-        dx:       Math.cos(angle) * dist,
-        dy:       Math.sin(angle) * dist - 8,
-        color:    colors[Math.floor(Math.random() * colors.length)],
-        size:     3 + Math.random() * 5,
-        duration: 400 + Math.random() * 400,
+        id:    ++this.pId,
+        cx, cy,
+        dx:    Math.cos(ang) * spd,
+        dy:    Math.sin(ang) * spd - 50,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size:  3 + Math.random() * 5,
+        dur:   400 + Math.random() * 400,
       };
-      this.particles.push(p);
+      this.particles = [...this.particles, p];
       setTimeout(() => {
         this.particles = this.particles.filter(pp => pp.id !== p.id);
         this.cd.markForCheck();
-      }, p.duration + 50);
+      }, p.dur + 80);
     }
   }
 
-  trackParticle(_: number, p: Particle): number { return p.id; }
-  trackLane(_: number, l: LaneModel): number { return l.index; }
-  trackDot(_: number, d: ProgressDot): number { return d.index; }
-
-  // ── Core Game Logic ───────────────────────────────────────────
-  startGame(): void {
-    if (!this.canStart) return;
-    this.balance -= this.stake;
-    this.laneProgress = 0;
-    this.currentMultiplier = 1.0;
-    this.cashedAmount = 0;
-    this.status = 'running';
-
-    this.buildLanes();
-    this.buildProgressDots();
-    this.updateCoins();
-    this.updateProgress();
-    this.resetChicken();
-    this.resolvingJump = false;
-    this.cd.markForCheck();
-  }
-
-  advanceLane(targetIndex?: number): void {
+  advance(): void {
     if (this.status !== 'running') return;
-    if (this.resolvingJump) return;
-    if (targetIndex !== undefined && targetIndex !== this.laneProgress) return;
+    if (this.locked) return;
 
-    const i = this.laneProgress;
-    const config = DIFFICULTY_MAP[this.difficulty];
-    const lethal = Math.random() < config.roastChance;
-    this.resolvingJump = true;
+    this.locked = true;
+    const target = this.lane;
+    const targetVisible = target - this.visibleStart;
+    if (targetVisible < 0 || targetVisible >= LANE_COUNT) {
+      this.locked = false;
+      return;
+    }
+    const cfg    = DIFF[this.diff];
+    const lethal = Math.random() < cfg.roastChance;
 
-    // Jump animation
+    // Phase 1: start jump, move chicken
     this.chickenJumping = true;
-    setTimeout(() => { this.chickenJumping = false; this.cd.markForCheck(); }, 350);
-
-    this.moveChickenTo(i);
+    this.moveChicken(targetVisible);
     this.cd.markForCheck();
 
     setTimeout(() => {
-      if (this.status !== 'running') {
-        this.resolvingJump = false;
-        return;
-      }
-
-      this.showFire(i, lethal);
+      this.chickenJumping = false;
+      this.igniteFire(targetVisible, lethal, lethal ? 1000 : 550);
 
       if (lethal) {
-        this.status = 'game-over';
+        this.status      = 'gameover';
         this.chickenDead = true;
-
-        // crash particles
-        this.spawnParticles(
-          this.getChickenLeft(i) + 3.5,
-          55,
-          ['#fb923c', '#ef4444', '#fbbf24', '#f87171'],
-          28,
-        );
-
+        this.spawnParticles(targetVisible, ['#fb923c','#ef4444','#fbbf24','#f87171'], 28);
+        this.syncCoins();
+        this.syncDots();
         this.cd.markForCheck();
-        this.resolvingJump = false;
+
+        setTimeout(() => {
+          this.locked = false;
+          this.cd.markForCheck();
+        }, 700);
+
       } else {
-        this.laneProgress = i + 1;
-        this.currentMultiplier = Number(
-          (1 + this.laneProgress * 0.18 * config.progMult).toFixed(2)
-        );
+        this.lane = target + 1;
+        this.mult = +(1 + this.lane * 0.18 * cfg.progMult).toFixed(2);
 
-        this.updateCoins();
-        this.updateProgress();
-
-        // win particles
-        this.spawnParticles(
-          this.getChickenLeft(i) + 3.5,
-          50,
-          ['#22c55e', '#86efac', '#fbbf24'],
-          12,
-        );
-
-        if (this.laneProgress >= LANE_COUNT) {
-          this.cashOut();
+        if (this.lane - this.visibleStart >= LANE_COUNT) {
+          this.visibleStart = this.lane - (LANE_COUNT - 1);
+          this.syncLabels();
+          this.shiftStepAnim = true;
+          setTimeout(() => {
+            this.shiftStepAnim = false;
+            this.cd.markForCheck();
+          }, 180);
         }
 
+        const chickenVisible = this.lane - 1 - this.visibleStart;
+        this.moveChicken(chickenVisible);
+
+        this.spawnParticles(Math.max(0, Math.min(LANE_COUNT - 1, chickenVisible)), ['#22c55e','#86efac','#fbbf24'], 12);
+        this.syncCoins();
+        this.syncDots();
+
+        this.locked = false;
         this.cd.markForCheck();
-        this.resolvingJump = false;
       }
-    }, 200);
+    }, 220);
+  }
+
+  startGame(): void {
+    if (!this.canStart) return;
+    this.balance -= this.stake;
+    this.lane    = 0;
+    this.visibleStart = 0;
+    this.mult    = 1.0;
+    this.status  = 'running';
+    this.locked  = false;
+    this.cashedAmount = 0;
+
+    this.buildLanes();
+    this.buildDots();
+    this.resetChicken();
+    this.syncCoins();
+    this.syncDots();
+    this.syncLabels();
+    this.cd.markForCheck();
   }
 
   cashOut(): void {
     if (this.status !== 'running') return;
-    const payout = Number((this.stake * this.currentMultiplier).toFixed(2));
-    this.balance += payout;
-    this.cashedAmount = payout;
-    this.status = 'cashed-out';
+    this.cashedAmount = this.payout;
+    this.balance     += this.cashedAmount;
+    this.status       = 'cashedout';
+    this.locked       = false;
 
-    this.liveWin = `+$${payout.toFixed(2)}`;
+    this.syncCoins();
+    this.syncDots();
+
+    this.liveWinText = `+$${this.cashedAmount.toFixed(2)}`;
     this.showLiveWin = true;
-    clearTimeout(this.liveWinTimeout);
-    this.liveWinTimeout = setTimeout(() => {
-      this.showLiveWin = false;
-      this.cd.markForCheck();
-    }, 3000);
-
-    this.updateCoins();
+    clearTimeout(this.liveWinTimer);
+    this.liveWinTimer = setTimeout(() => { this.showLiveWin = false; this.cd.markForCheck(); }, 3000);
     this.cd.markForCheck();
   }
 
   resetGame(): void {
     this.status = 'idle';
-    this.laneProgress = 0;
-    this.currentMultiplier = 1.0;
+    this.lane   = 0;
+    this.visibleStart = 0;
+    this.mult   = 1.0;
+    this.locked = false;
     this.cashedAmount = 0;
-    this.chickenDead = false;
-    this.chickenJumping = false;
-    this.resolvingJump = false;
 
     this.buildLanes();
-    this.buildProgressDots();
+    this.buildDots();
     this.resetChicken();
+    this.syncCoins();
+    this.syncDots();
     this.cd.markForCheck();
   }
 
-  // ── UI actions ────────────────────────────────────────────────
-  selectBet(amount: number): void {
-    if (this.isRunning) return;
-    this.stake = amount;
-  }
+  selectBet(amount: number): void { if (!this.isRunning) { this.stake = amount; } }
+  selectDiff(d: Difficulty): void { if (!this.isRunning) { this.diff = d; this.syncLabels(); } }
 
-  selectDifficulty(diff: Difficulty): void {
-    if (this.isRunning) return;
-    this.difficulty = diff;
-    this.updateMultiplierLabels();
-  }
+  trackLane(_: number, l: LaneVM): number        { return l.index; }
+  trackDot (_: number, d: DotVM): number          { return d.index; }
+  trackPart(_: number, p: Particle): number       { return p.id; }
 
-  onGameAreaClick(): void {
-    if (this.status !== 'running') return;
-    this.advanceLane();
+  onAreaClick(e: MouseEvent): void {
+    const target = e.target as HTMLElement;
+    if (target.closest('.ov-card')) return;
+    this.advance();
   }
 }
