@@ -64,6 +64,23 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 // ── Road ─────────────────────────────────────────────────────────
 .road { flex: 1; min-height: 0; display: flex; position: relative; }
 
+.road::before {
+  content: '';
+  position: absolute;
+  left: 120px;
+  right: 0;
+  top: 0;
+  bottom: 22px;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255,255,255,.035) 0 2px,
+    transparent 2px 120px
+  );
+  animation: roadDrift 1.4s linear infinite;
+  opacity: .45;
+}
+
 .start-zone {
   width: 120px; flex-shrink: 0;
   background: linear-gradient(90deg, #080c18, #111827);
@@ -85,10 +102,15 @@ button:disabled { cursor: not-allowed; opacity: .38; }
   }
 }
 
-.lanes-wrap { flex: 1; display: flex; position: relative; }
+.lanes-wrap {
+  flex: 1;
+  display: flex;
+  position: relative;
+  will-change: transform;
+}
 
 .lanes-wrap.shift-step {
-  animation: laneShiftStep .18s ease;
+  filter: saturate(1.04);
 }
 
 .lane {
@@ -111,7 +133,17 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 .coin {
   width: 82px; height: 82px; border-radius: 50%;
   display: grid; place-items: center; position: relative;
-  transition: transform .12s ease; cursor: default;
+  transition: transform .12s ease, box-shadow .12s ease; cursor: default;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: auto 12px 6px;
+    height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(0,0,0,.28), transparent 70%);
+    pointer-events: none;
+  }
 
   &.inactive { background: radial-gradient(circle at 38% 32%, #4a5a8a, #2d3a60 55%, #1e2845); border: 2px solid #3a4a70; box-shadow: 0 7px 0 $bg0, 0 9px 18px rgba(0,0,0,.55), inset 0 2px 5px rgba(255,255,255,.07), inset 0 -3px 7px rgba(0,0,0,.45); }
   &.active   { background: radial-gradient(circle at 38% 32%, #4ade80, #16a34a 55%, #0f6630); border: 2px solid $green; box-shadow: 0 7px 0 #052e16, 0 9px 22px rgba(34,197,94,.32), inset 0 2px 5px rgba(255,255,255,.13), inset 0 -3px 7px rgba(0,0,0,.3); }
@@ -138,20 +170,20 @@ button:disabled { cursor: not-allowed; opacity: .38; }
     height: 34px;
     background: linear-gradient(to top, #ef4444, #fb923c 60%, transparent 100%);
     filter: blur(1.6px);
-    animation: fOuter .24s ease-in-out infinite alternate;
+    animation: none;
   }
   .f-mid {
     width: 16px;
     height: 24px;
     background: linear-gradient(to top, #f59e0b, #fde68a 70%, transparent 100%);
     filter: blur(0.9px);
-    animation: fMid .22s ease-in-out infinite alternate;
+    animation: none;
   }
   .f-core {
     width: 9px;
     height: 15px;
     background: linear-gradient(to top, #fff7cc, #fde68a 70%, transparent 100%);
-    animation: fCore .2s ease-in-out infinite alternate;
+    animation: none;
   }
   .fire-glow { opacity: 0.55; }
 }
@@ -186,9 +218,10 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 .chicken {
   position: absolute; bottom: 20px;
   width: 92px; height: 92px;
-  transition: left .28s cubic-bezier(.34, 1.56, .64, 1);
+  transition: left .34s cubic-bezier(.22, .8, .22, 1);
   z-index: 15; pointer-events: none;
   display: flex; flex-direction: column; align-items: center;
+  will-change: left;
 }
 
 .chick-img {
@@ -238,6 +271,39 @@ button:disabled { cursor: not-allowed; opacity: .38; }
   &.sel { background: linear-gradient(135deg,#1e3a5e,#1a4070); border-color: $blue; color: #93c5fd; box-shadow: 0 0 10px rgba(96,165,250,.18); }
 }
 .bet-coin { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fde68a, $gold, #b45309); box-shadow: 0 1px 3px rgba(245,158,11,.4); }
+
+.custom-bet-input {
+  height: 36px;
+  width: 92px;
+  border-radius: 8px;
+  border: 1px solid $b1;
+  background: #121a30;
+  color: #e2e8f0;
+  padding: 0 10px;
+  font-family: $font-u;
+  font-size: 13px;
+  font-weight: 600;
+
+  &::placeholder { color: #64748b; }
+  &:focus { outline: none; border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96,165,250,.18); }
+}
+
+.bet-add-btn {
+  height: 36px;
+  min-width: 58px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #374151, #1f2937);
+  border: 1px solid #4b5563;
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  box-shadow: 0 3px 0 #111827;
+  transition: transform .1s ease, box-shadow .1s ease;
+
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+  &:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 1px 0 #111827; }
+}
 
 .diff-label { font-size: 13px; color: $dim; white-space: nowrap; }
 .diff-tabs { display: flex; background: $bg0; border: 1px solid $b0; border-radius: 8px; overflow: hidden; height: 36px; }
@@ -291,6 +357,11 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 @keyframes laneShiftStep {
   from { transform: translateX(12px); }
   to { transform: translateX(0); }
+}
+
+@keyframes roadDrift {
+  from { background-position-x: 0; }
+  to { background-position-x: -120px; }
 }
 
 @media (max-width: 640px) {

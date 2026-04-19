@@ -21,6 +21,8 @@ export interface DotVM { index: number; state: 'idle' | 'reached' | 'current'; }
 export interface Particle { id: number; cx: number; cy: number; dx: number; dy: number; color: string; size: number; dur: number; }
 
 const LANE_COUNT = 6;
+const BET_MAX = 50;
+const SCROLL_START_COLS_LEFT = 3;
 const DIFF: Record<Difficulty, DiffConfig> = {
   easy:     { roastChance: 0.15, progMult: 0.8  },
   medium:   { roastChance: 0.26, progMult: 1.0  },
@@ -60,18 +62,22 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   chickenJumping = false;
   chickenDead    = false;
   shiftStepAnim = false;
+  laneShiftOffsetPx = 0;
+  laneShiftTransition = false;
 
   onlineCount  = 3548;
   showLiveWin  = false;
   liveWinText  = '';
-  readonly betOptions: number[]      = [0.5, 1, 50, 100];
+  readonly betOptions: number[]      = [1, 2, 5, 10, 20, 50];
   readonly diffOptions: Difficulty[] = ['easy', 'medium', 'hard', 'hardcore'];
+  customBetDraft = '';
 
   private pId = 0;
   private readonly chickenWidth = 92;
   private onlineTick?: ReturnType<typeof setInterval>;
   private liveWinTimer?: ReturnType<typeof setTimeout>;
   private hazardMap = new Map<number, boolean>();
+  private runSeed = 1;
 
   constructor(private cd: ChangeDetectorRef, private zone: NgZone) {}
 
@@ -103,11 +109,15 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   get multLabel()  { return this.mult.toFixed(2) + 'x'; }
   get multColor()  { return this.mult > 1.5 ? '#fbbf24' : '#34d399'; }
 
+  private multiplierForProgress(progress: number): number {
+    return +(1 + progress * 0.5).toFixed(2);
+  }
+
   buildLanes(): void {
     const cfg = DIFF[this.diff];
     this.lanes = Array.from({ length: LANE_COUNT }, (_, i) => ({
       index:       i,
-      label:       (1 + (this.visibleStart + i + 1) * 0.18 * cfg.progMult).toFixed(2) + 'x',
+      label:       this.multiplierForProgress(this.visibleStart + i + 1).toFixed(2) + 'x',
       coinState:   'inactive' as const,
       fireArmed:   false,
       fireBurning: false,
@@ -141,10 +151,14 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   syncLabels(): void {
-    const cfg = DIFF[this.diff];
     for (const l of this.lanes) {
-      l.label = (1 + (this.visibleStart + l.index + 1) * 0.18 * cfg.progMult).toFixed(2) + 'x';
+      l.label = this.multiplierForProgress(this.visibleStart + l.index + 1).toFixed(2) + 'x';
     }
+  }
+
+  private seededRandom(value: number): number {
+    const x = Math.sin((value + 1) * (this.runSeed + 17) * 12.9898) * 43758.5453;
+    return x - Math.floor(x);
   }
 
   private isFireLane(globalIdx: number): boolean {
@@ -152,9 +166,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     if (cached !== undefined) return cached;
 
     const cfg = DIFF[this.diff];
-    const patterned = globalIdx % 5 === 2 || globalIdx % 7 === 4;
-    const chance = Math.min(0.72, cfg.roastChance * 0.72 + (patterned ? 0.2 : 0.05));
-    const val = Math.random() < chance;
+    const chance = Math.min(0.78, cfg.roastChance * 0.95 + 0.06);
+    const val = this.seededRandom(globalIdx) < chance;
     this.hazardMap.set(globalIdx, val);
     return val;
   }
@@ -174,6 +187,12 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     const laneW = (areaW - szW) / LANE_COUNT;
     if (laneIdx < 0) return szW - this.chickenWidth + 10;
     return szW + laneIdx * laneW + laneW / 2 - this.chickenWidth / 2;
+  }
+
+  private laneWidthPx(): number {
+    const szW   = this.startZoneRef?.nativeElement.offsetWidth ?? 120;
+    const areaW = this.gameAreaRef?.nativeElement.offsetWidth  ?? 900;
+    return (areaW - szW) / LANE_COUNT;
   }
 
   moveChicken(laneIdx: number): void {
@@ -244,7 +263,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       this.locked = false;
       return;
     }
-    const cfg    = DIFF[this.diff];
     const lethal = this.isFireLane(target);
 
     // Phase 1: start jump, move chicken
@@ -274,21 +292,39 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
       } else {
         this.lane = target + 1;
-        this.mult = +(1 + this.lane * 0.18 * cfg.progMult).toFixed(2);
+        this.mult = this.multiplierForProgress(this.lane);
 
-        if (this.lane - this.visibleStart >= LANE_COUNT) {
-          this.visibleStart = this.lane - (LANE_COUNT - 1);
+        const landed = this.lane - 1;
+        const desiredVisibleStart = Math.max(0, landed - (LANE_COUNT - SCROLL_START_COLS_LEFT - 1));
+
+        if (desiredVisibleStart > this.visibleStart) {
+          const laneWidth = this.laneWidthPx();
+          this.visibleStart = desiredVisibleStart;
           this.refreshLaneWindow();
+
+          // Smoothly slide the refreshed window from right to left by one lane width.
+          this.laneShiftTransition = false;
+          this.laneShiftOffsetPx = laneWidth;
           this.shiftStepAnim = true;
+          this.cd.markForCheck();
+
+          requestAnimationFrame(() => {
+            this.laneShiftTransition = true;
+            this.laneShiftOffsetPx = 0;
+            this.cd.markForCheck();
+          });
+
           setTimeout(() => {
             this.shiftStepAnim = false;
+            this.laneShiftTransition = false;
+            this.laneShiftOffsetPx = 0;
             this.cd.markForCheck();
-          }, 180);
+          }, 320);
         } else {
           this.refreshLaneWindow();
         }
 
-        const chickenVisible = this.lane - 1 - this.visibleStart;
+        const chickenVisible = landed - this.visibleStart;
         this.moveChicken(chickenVisible);
 
         this.spawnParticles(Math.max(0, Math.min(LANE_COUNT - 1, chickenVisible)), ['#22c55e','#86efac','#fbbf24'], 12);
@@ -310,6 +346,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.status  = 'running';
     this.locked  = false;
     this.cashedAmount = 0;
+    this.runSeed = Math.floor(Math.random() * 100000) + 1;
     this.hazardMap.clear();
 
     this.buildLanes();
@@ -345,6 +382,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.mult   = 1.0;
     this.locked = false;
     this.cashedAmount = 0;
+    this.runSeed = Math.floor(Math.random() * 100000) + 1;
     this.hazardMap.clear();
 
     this.buildLanes();
@@ -355,7 +393,32 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cd.markForCheck();
   }
 
-  selectBet(amount: number): void { if (!this.isRunning) { this.stake = amount; } }
+  selectBet(amount: number): void {
+    if (this.isRunning) return;
+    const whole = Math.floor(amount);
+    if (whole < 1 || whole > BET_MAX) return;
+    this.stake = whole;
+  }
+
+  onCustomBetInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.customBetDraft = value.replace(/[^0-9]/g, '');
+  }
+
+  addCustomBet(): void {
+    if (this.isRunning) return;
+    const parsed = Number(this.customBetDraft);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > BET_MAX) return;
+
+    if (!this.betOptions.includes(parsed)) {
+      this.betOptions.push(parsed);
+      this.betOptions.sort((a, b) => a - b);
+    }
+    this.stake = parsed;
+    this.customBetDraft = '';
+    this.cd.markForCheck();
+  }
+
   selectDiff(d: Difficulty): void {
     if (this.isRunning) return;
     this.diff = d;

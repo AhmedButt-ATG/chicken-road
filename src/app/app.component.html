@@ -32,7 +32,12 @@
       </div>
 
       <!-- Lanes -->
-      <div class="lanes-wrap" [class.shift-step]="shiftStepAnim">
+      <div
+        class="lanes-wrap"
+        [class.shift-step]="shiftStepAnim"
+        [style.transform]="'translate3d(' + laneShiftOffsetPx + 'px, 0, 0)'"
+        [style.transition]="laneShiftTransition ? 'transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none'"
+      >
         <div
           class="lane"
           *ngFor="let l of lanes; trackBy: trackLane"
@@ -112,7 +117,7 @@
           <h2>Tap To Jump!</h2>
           <p>Click anywhere to move the chicken forward.</p>
           <p>Avoid the flames — or cash out early!</p>
-          <div class="stake-pill">Stake: <strong>${{ stake.toFixed(2) }}</strong></div>
+          <div class="stake-pill">Stake: <strong>${{ stake }}</strong></div>
           <div class="suits-row">
             <span>♠</span><span class="r">♥</span><span class="r">♦</span><span>♣</span>
           </div>
@@ -154,6 +159,24 @@
         [disabled]="isRunning"
         (click)="selectBet(b)"
       ><span class="bet-coin"></span>{{ b }}</button>
+
+      <input
+        class="custom-bet-input"
+        type="text"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        maxlength="2"
+        placeholder="Custom"
+        [value]="customBetDraft"
+        [disabled]="isRunning"
+        (input)="onCustomBetInput($event)"
+      />
+
+      <button
+        class="bet-add-btn"
+        [disabled]="isRunning"
+        (click)="addCustomBet()"
+      >Add</button>
 
       <span class="diff-label">Difficulty</span>
       <div class="diff-tabs">
