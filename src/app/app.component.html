@@ -1,158 +1,254 @@
-<main class="game-shell min-h-screen px-3 py-4 sm:px-6 lg:px-10">
-  <section class="mx-auto flex w-full max-w-6xl flex-col gap-4">
+<div class="shell">
 
-    <!-- ── Header ─────────────────────────────────────────────────── -->
-    <header class="top-bar">
-      <div class="header-grid">
+  <!-- ══════════════ TOP BAR ══════════════ -->
+  <header class="topbar">
+    <div class="logo">CHICKEN <span class="logo-accent">R🥚AD</span></div>
 
-        <div class="metric-card">
-          <span class="metric-label">Balance</span>
-          <span class="metric-value">${{ state.balance.toFixed(2) }}</span>
-        </div>
+    <div class="live-bar">
+      <span class="live-dot"></span>
+      Live wins:
+      <span class="live-win-badge" *ngIf="showLiveWin">{{ liveWin }}</span>
+    </div>
 
-        <div class="metric-card center-card">
-          <div class="brand">
-            <img
-              src="https://em-content.zobj.net/source/google/387/chicken_1f414.png"
-              alt="chicken"
-              class="brand-chicken"
-              (error)="$any($event.target).style.display='none'"
-            />
-            <div>
-              <p class="brand-title">{{ gameTitle }}</p>
-              <p class="brand-sub">Arcade Risk Run</p>
-            </div>
-            <img
-              src="https://em-content.zobj.net/source/google/387/chicken_1f414.png"
-              alt="chicken"
-              class="brand-chicken flip"
-              (error)="$any($event.target).style.display='none'"
-            />
-          </div>
-        </div>
+    <div class="online-bar">
+      <span class="online-dot"></span>
+      Online: <strong>{{ onlineCount }}</strong>
+    </div>
 
-        <div class="metric-card right-card">
-          <span class="metric-label">Multiplier</span>
-          <span class="metric-value multiplier-val">{{ state.currentMultiplier.toFixed(2) }}x</span>
-        </div>
-
+    <div class="topbar-right">
+      <div class="balance-badge">
+        <span class="coin-icon">$</span>
+        <span class="balance-num">{{ balance.toFixed(2) }}</span>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <!-- ── Stage ──────────────────────────────────────────────────── -->
-    <section class="stage-wrapper">
-      <div class="canvas-wrap">
+  <!-- ══════════════ GAME AREA ══════════════ -->
+  <section class="game-area" (click)="onGameAreaClick()">
 
-        <canvas
-          #gameCanvas
-          class="game-canvas"
-          (click)="onCanvasAction($event)"
-          (touchstart)="onCanvasAction($event)"
-        ></canvas>
+    <!-- Road -->
+    <div class="road">
 
-        <!-- Overlays (pointer-events: none so canvas still receives clicks) -->
-        <div class="overlay">
-
-          <div *ngIf="state.status === 'idle'" class="status-card idle-card">
-            <img
-              src="https://em-content.zobj.net/source/google/387/chicken_1f414.png"
-              alt="chicken"
-              class="overlay-chicken"
-              (error)="$any($event.target).style.display='none'"
-            />
-            <h2>Tap To Cross!</h2>
-            <p>Click the road to jump lane-by-lane.</p>
-            <p class="stake-badge">Stake: <strong>${{ stakeAmount.toFixed(2) }}</strong></p>
-            <div class="card-suits-row">
-              <span>♠</span><span class="red">♥</span><span class="red">♦</span><span>♣</span>
-            </div>
-          </div>
-
-          <div *ngIf="state.status === 'game-over'" class="status-card danger-card">
-            <span class="overlay-emoji">💥</span>
-            <h2>Crash! Run Lost</h2>
-            <p>Reached lane <strong>{{ state.laneProgress + 1 }}</strong> of 6.</p>
-            <p class="hint">Hit Restart to try again.</p>
-          </div>
-
-          <div *ngIf="state.status === 'cashed-out'" class="status-card success-card">
-            <span class="overlay-emoji">🏆</span>
-            <h2>Cashed Out!</h2>
-            <p class="payout-amount">${{ state.cashedAmount.toFixed(2) }}</p>
-            <p class="hint">Ready for another run.</p>
-          </div>
-
+      <!-- Start zone / door -->
+      <div class="start-zone">
+        <div class="start-door">
+          <div class="door-arch"></div>
         </div>
       </div>
-    </section>
 
-    <!-- ── Controls ───────────────────────────────────────────────── -->
-    <footer class="controls">
-      <div class="controls-grid">
-
-        <button
-          type="button"
-          class="ctrl-btn start-btn"
-          [disabled]="!canStart"
-          (click)="startGame()"
+      <!-- Lanes -->
+      <div class="lanes">
+        <div
+          class="lane"
+          *ngFor="let lane of lanes; trackBy: trackLane"
+          [attr.data-index]="lane.index"
         >
-          <span class="btn-icon">🐔</span>
-          <span>Start Run</span>
-        </button>
+          <!-- Decorative wall panels -->
+          <div class="wall-panel top-left"></div>
+          <div class="wall-panel top-right"></div>
 
-        <button
-          type="button"
-          class="ctrl-btn cashout-btn"
-          [disabled]="!canCashOut"
-          (click)="cashOut()"
-        >
-          <span class="btn-icon">💰</span>
-          <span>Cash Out (${{ currentPayout.toFixed(2) }})</span>
-        </button>
+          <!-- Dashed lane divider (right edge) -->
+          <div class="lane-divider"></div>
 
-        <button
-          type="button"
-          class="ctrl-btn restart-btn"
-          [disabled]="state.status === 'running'"
-          (click)="restart()"
-        >
-          <span class="btn-icon">🔄</span>
-          <span>Restart</span>
-        </button>
-
-        <label class="difficulty-wrap" for="difficultySelect">
-          <span class="diff-label">Difficulty</span>
-          <select
-            id="difficultySelect"
-            class="difficulty-select"
-            [value]="state.difficulty"
-            [disabled]="state.status === 'running'"
-            (change)="onDifficultyChange($any($event.target).value)"
+          <!-- Multiplier coin -->
+          <div
+            class="coin-slot"
+            (click)="advanceLane(lane.index); $event.stopPropagation()"
           >
-            <option *ngFor="let option of difficultyOptions" [value]="option">
-              {{ option | titlecase }}
-            </option>
-          </select>
-        </label>
-
-      </div>
-
-      <!-- Lane progress strip -->
-      <div class="lane-strip">
-        <span class="strip-label">Progress</span>
-        <div class="lane-dots">
-          <ng-container *ngFor="let i of [0,1,2,3,4,5]">
             <div
-              class="lane-dot"
-              [class.reached]="state.laneProgress > i"
-              [class.current]="state.laneProgress === i && state.status === 'running'"
-            ></div>
-            <div *ngIf="i < 5" class="lane-connector" [class.reached]="state.laneProgress > i"></div>
-          </ng-container>
-        </div>
-        <span class="strip-mult">{{ state.currentMultiplier.toFixed(2) }}x</span>
-      </div>
-    </footer>
+              class="coin-3d"
+              [class.coin-inactive]="lane.coinState === 'inactive'"
+              [class.coin-active]="lane.coinState === 'active'"
+              [class.coin-current]="lane.coinState === 'current'"
+            >
+              <div class="coin-ring">
+                <span class="coin-label">{{ lane.multiplier }}x</span>
+              </div>
+              <!-- Shine streak -->
+              <div class="coin-shine"></div>
+            </div>
+          </div>
 
+          <!-- Fire pit area -->
+          <div class="pit-area">
+            <!-- Fire -->
+            <div
+              class="fire-wrap"
+              [class.fire-burning]="lane.fireVisible"
+              [class.fire-lethal]="lane.fireLethal"
+            >
+              <div class="flame flame-outer"></div>
+              <div class="flame flame-mid"></div>
+              <div class="flame flame-core"></div>
+              <div class="flame-glow"></div>
+            </div>
+
+            <!-- Pit hole with grill -->
+            <div class="pit-hole">
+              <div class="pit-grill">
+                <span *ngFor="let b of [0,1,2,3,4,5,6]" class="grill-bar"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Chicken ── -->
+      <div
+        class="chicken"
+        [style.left.%]="chickenLeft"
+        [class.chicken-jumping]="chickenJumping"
+        [class.chicken-dead]="chickenDead"
+      >
+        <span class="chicken-emoji">🐔</span>
+        <div class="chicken-shadow"></div>
+      </div>
+
+      <!-- ── Particles ── -->
+      <div
+        class="particle"
+        *ngFor="let p of particles; trackBy: trackParticle"
+        [style.left.%]="p.x"
+        [style.top.%]="p.y"
+        [style.width.px]="p.size"
+        [style.height.px]="p.size"
+        [style.background]="p.color"
+        [style.--dx]="p.dx + '%'"
+        [style.--dy]="p.dy + '%'"
+        [style.animation-duration]="p.duration + 'ms'"
+      ></div>
+
+      <!-- ── Overlays ── -->
+      <div class="overlay-wrap">
+
+        <!-- IDLE -->
+        <div class="overlay-card overlay-idle" *ngIf="status === 'idle'">
+          <span class="ov-emoji">🐔</span>
+          <h2>Tap To Jump!</h2>
+          <p>Navigate the chicken across 6 fiery lanes.</p>
+          <p>Avoid the flames — or cash out early!</p>
+          <div class="stake-pill">Stake: <strong>${{ stake.toFixed(2) }}</strong></div>
+          <div class="suits-row">
+            <span>♠</span><span class="red">♥</span><span class="red">♦</span><span>♣</span>
+          </div>
+        </div>
+
+        <!-- GAME OVER -->
+        <div class="overlay-card overlay-danger" *ngIf="status === 'game-over'">
+          <span class="ov-emoji">💥</span>
+          <h2>Roasted!</h2>
+          <p>Reached lane <strong>{{ laneProgress }}</strong> of 6.</p>
+          <p class="hint-text">Hit Play to retry</p>
+        </div>
+
+        <!-- CASHED OUT -->
+        <div class="overlay-card overlay-success" *ngIf="status === 'cashed-out'">
+          <span class="ov-emoji">🏆</span>
+          <h2>Cashed Out!</h2>
+          <div class="payout-big">${{ cashedAmount.toFixed(2) }}</div>
+          <p class="hint-text">Ready for another run</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Road floor strip -->
+    <div class="road-floor"></div>
   </section>
-</main>
+
+  <!-- ══════════════ CONTROLS ══════════════ -->
+  <footer class="controls">
+
+    <!-- Row 1: bet / difficulty / actions -->
+    <div class="ctrl-row">
+
+      <!-- Min / Max pill -->
+      <div class="minmax-pill">
+        <span class="mm-label">MIN</span>
+        <span class="mm-val">3</span>
+        <span class="mm-label">MAX</span>
+      </div>
+
+      <!-- Bet buttons -->
+      <button
+        class="bet-btn"
+        *ngFor="let b of betOptions"
+        [class.bet-selected]="stake === b"
+        (click)="selectBet(b)"
+        [disabled]="isRunning"
+      >
+        <span class="bet-coin"></span>{{ b }}
+      </button>
+
+      <!-- Difficulty label -->
+      <span class="diff-label">Difficulty</span>
+
+      <!-- Difficulty tabs -->
+      <div class="diff-tabs">
+        <button
+          class="diff-tab"
+          *ngFor="let d of difficultyOptions"
+          [class.diff-active]="difficulty === d"
+          (click)="selectDifficulty(d)"
+          [disabled]="isRunning"
+        >{{ d | titlecase }}</button>
+      </div>
+
+      <span class="chance-label">Chance of collision</span>
+
+      <!-- Action buttons -->
+      <div class="action-btns">
+        <!-- Cash out -->
+        <button
+          class="btn-cashout"
+          [disabled]="!canCashOut"
+          (click)="cashOut(); $event.stopPropagation()"
+        >
+          <span class="btn-cashout-main">CASH OUT</span>
+          <span class="btn-cashout-sub">{{ currentPayout.toFixed(2) }} USD</span>
+        </button>
+
+        <!-- Reset (shown after game ends) -->
+        <button
+          class="btn-reset"
+          *ngIf="status === 'game-over' || status === 'cashed-out'"
+          (click)="resetGame(); $event.stopPropagation()"
+          title="Reset"
+        >↺</button>
+
+        <!-- GO / Play -->
+        <button
+          class="btn-go"
+          [disabled]="!canStart"
+          (click)="startGame(); $event.stopPropagation()"
+        >
+          {{ status === 'game-over' || status === 'cashed-out' ? 'Play' : 'GO' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Row 2: progress strip -->
+    <div class="ctrl-row progress-row">
+      <span class="progress-label">Progress</span>
+
+      <div class="dot-track">
+        <ng-container *ngFor="let dot of progressDots; trackBy: trackDot; let last = last">
+          <div
+            class="prog-dot"
+            [class.dot-reached]="dot.state === 'reached'"
+            [class.dot-current]="dot.state === 'current'"
+          ></div>
+          <div
+            class="prog-line"
+            *ngIf="!last"
+            [class.line-reached]="dot.state === 'reached'"
+          ></div>
+        </ng-container>
+      </div>
+
+      <span class="mult-display" [style.color]="multiplierColor">{{ multiplierDisplay }}</span>
+    </div>
+
+  </footer>
+
+</div>
