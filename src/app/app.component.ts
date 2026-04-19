@@ -13,6 +13,7 @@ export interface LaneVM {
   index: number;
   label: string;          
   coinState: 'inactive' | 'active' | 'current';
+  fireArmed: boolean;
   fireBurning: boolean;
   fireLethal: boolean;
 }
@@ -67,8 +68,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly diffOptions: Difficulty[] = ['easy', 'medium', 'hard', 'hardcore'];
 
   private pId = 0;
+  private readonly chickenWidth = 92;
   private onlineTick?: ReturnType<typeof setInterval>;
   private liveWinTimer?: ReturnType<typeof setTimeout>;
+  private hazardMap = new Map<number, boolean>();
 
   constructor(private cd: ChangeDetectorRef, private zone: NgZone) {}
 
@@ -106,9 +109,11 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       index:       i,
       label:       (1 + (this.visibleStart + i + 1) * 0.18 * cfg.progMult).toFixed(2) + 'x',
       coinState:   'inactive' as const,
+      fireArmed:   false,
       fireBurning: false,
       fireLethal:  false,
     }));
+    this.refreshLaneWindow();
   }
 
   buildDots(): void {
@@ -142,12 +147,33 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private isFireLane(globalIdx: number): boolean {
+    const cached = this.hazardMap.get(globalIdx);
+    if (cached !== undefined) return cached;
+
+    const cfg = DIFF[this.diff];
+    const patterned = globalIdx % 5 === 2 || globalIdx % 7 === 4;
+    const chance = Math.min(0.72, cfg.roastChance * 0.72 + (patterned ? 0.2 : 0.05));
+    const val = Math.random() < chance;
+    this.hazardMap.set(globalIdx, val);
+    return val;
+  }
+
+  private refreshLaneWindow(): void {
+    this.syncLabels();
+    for (const l of this.lanes) {
+      const globalIdx = this.visibleStart + l.index;
+      l.fireArmed = this.isFireLane(globalIdx);
+      if (!l.fireBurning) l.fireLethal = false;
+    }
+  }
+
   calcChickenLeft(laneIdx: number): number {
     const szW   = this.startZoneRef?.nativeElement.offsetWidth ?? 120;
     const areaW = this.gameAreaRef?.nativeElement.offsetWidth  ?? 900;
     const laneW = (areaW - szW) / LANE_COUNT;
-    if (laneIdx < 0) return szW - 62;           
-    return szW + laneIdx * laneW + laneW / 2 - 34; 
+    if (laneIdx < 0) return szW - this.chickenWidth + 10;
+    return szW + laneIdx * laneW + laneW / 2 - this.chickenWidth / 2;
   }
 
   moveChicken(laneIdx: number): void {
@@ -219,7 +245,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     const cfg    = DIFF[this.diff];
-    const lethal = Math.random() < cfg.roastChance;
+    const lethal = this.isFireLane(target);
 
     // Phase 1: start jump, move chicken
     this.chickenJumping = true;
@@ -228,7 +254,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     setTimeout(() => {
       this.chickenJumping = false;
-      this.igniteFire(targetVisible, lethal, lethal ? 1000 : 550);
+
+      if (lethal) {
+        this.igniteFire(targetVisible, true, 1200);
+      }
 
       if (lethal) {
         this.status      = 'gameover';
@@ -249,12 +278,14 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
         if (this.lane - this.visibleStart >= LANE_COUNT) {
           this.visibleStart = this.lane - (LANE_COUNT - 1);
-          this.syncLabels();
+          this.refreshLaneWindow();
           this.shiftStepAnim = true;
           setTimeout(() => {
             this.shiftStepAnim = false;
             this.cd.markForCheck();
           }, 180);
+        } else {
+          this.refreshLaneWindow();
         }
 
         const chickenVisible = this.lane - 1 - this.visibleStart;
@@ -279,13 +310,14 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.status  = 'running';
     this.locked  = false;
     this.cashedAmount = 0;
+    this.hazardMap.clear();
 
     this.buildLanes();
     this.buildDots();
     this.resetChicken();
     this.syncCoins();
     this.syncDots();
-    this.syncLabels();
+    this.refreshLaneWindow();
     this.cd.markForCheck();
   }
 
@@ -313,6 +345,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.mult   = 1.0;
     this.locked = false;
     this.cashedAmount = 0;
+    this.hazardMap.clear();
 
     this.buildLanes();
     this.buildDots();
@@ -323,7 +356,12 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   selectBet(amount: number): void { if (!this.isRunning) { this.stake = amount; } }
-  selectDiff(d: Difficulty): void { if (!this.isRunning) { this.diff = d; this.syncLabels(); } }
+  selectDiff(d: Difficulty): void {
+    if (this.isRunning) return;
+    this.diff = d;
+    this.hazardMap.clear();
+    this.refreshLaneWindow();
+  }
 
   trackLane(_: number, l: LaneVM): number        { return l.index; }
   trackDot (_: number, d: DotVM): number          { return d.index; }

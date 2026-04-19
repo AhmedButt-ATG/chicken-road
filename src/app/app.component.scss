@@ -23,9 +23,10 @@ button { font-family: $font-u; cursor: pointer; border: none; outline: none; }
 button:disabled { cursor: not-allowed; opacity: .38; }
 
 .shell { display: flex; flex-direction: column; height: 100vh;
-  background: radial-gradient(ellipse at 75% 10%, rgba(16,185,129,.12), transparent 35%),
-              radial-gradient(ellipse at 20% 85%, rgba(99,102,241,.1), transparent 35%),
-              linear-gradient(160deg, #06091a, #0d1225 55%, #060811);
+  background: radial-gradient(ellipse at 75% 10%, rgba(16,185,129,.2), transparent 35%),
+              radial-gradient(ellipse at 20% 85%, rgba(236,72,153,.12), transparent 32%),
+              radial-gradient(ellipse at 50% -20%, rgba(59,130,246,.26), transparent 45%),
+              linear-gradient(160deg, #0b1022, #111938 55%, #0a0f20);
 }
 
 // ══════════════ TOPBAR ══════════════════════════════════════════
@@ -92,7 +93,9 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 
 .lane {
   flex: 1; display: flex; flex-direction: column; align-items: center;
-  position: relative; background: $bg2; border-right: 1px dashed rgba(148,163,184,.15);
+  position: relative;
+  background: linear-gradient(180deg, rgba(96,165,250,.08), rgba(30,41,59,.25) 35%, #141c35 100%);
+  border-right: 1px dashed rgba(148,163,184,.22);
   &:last-child { border-right: none; }
   &::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(99,102,241,.2), transparent); }
 }
@@ -129,6 +132,30 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 // Fire container
 .fire { position: relative; width: 60px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; overflow: visible; pointer-events: none; }
 
+.fire.armed {
+  .f-outer {
+    width: 24px;
+    height: 34px;
+    background: linear-gradient(to top, #ef4444, #fb923c 60%, transparent 100%);
+    filter: blur(1.6px);
+    animation: fOuter .24s ease-in-out infinite alternate;
+  }
+  .f-mid {
+    width: 16px;
+    height: 24px;
+    background: linear-gradient(to top, #f59e0b, #fde68a 70%, transparent 100%);
+    filter: blur(0.9px);
+    animation: fMid .22s ease-in-out infinite alternate;
+  }
+  .f-core {
+    width: 9px;
+    height: 15px;
+    background: linear-gradient(to top, #fff7cc, #fde68a 70%, transparent 100%);
+    animation: fCore .2s ease-in-out infinite alternate;
+  }
+  .fire-glow { opacity: 0.55; }
+}
+
 // Flame layers — invisible by default
 .f-outer, .f-mid, .f-core {
   position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
@@ -144,9 +171,10 @@ button:disabled { cursor: not-allowed; opacity: .38; }
   .fire-glow { opacity: 1; }
 
   &.lethal {
-    .f-outer { height: 124px; background: linear-gradient(to top, #7f1d1d, #991b1b 20%, #dc2626 45%, #ef4444 70%, $ora 88%, transparent 100%); }
-    .f-mid   { height: 94px; }
-    .f-core  { height: 66px; }
+    .f-outer { height: 48vh; background: linear-gradient(to top, #7f1d1d, #991b1b 20%, #dc2626 45%, #ef4444 70%, $ora 88%, transparent 100%); }
+    .f-mid   { height: 36vh; }
+    .f-core  { height: 23vh; }
+    .fire-glow { opacity: 0.95; width: 120px; height: 42px; }
   }
 }
 
@@ -157,21 +185,21 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 
 .chicken {
   position: absolute; bottom: 20px;
-  width: 68px; height: 68px;
+  width: 92px; height: 92px;
   transition: left .28s cubic-bezier(.34, 1.56, .64, 1);
   z-index: 15; pointer-events: none;
   display: flex; flex-direction: column; align-items: center;
 }
 
 .chick-img {
-  width: 56px;
-  height: 56px;
+  width: 82px;
+  height: 82px;
   object-fit: contain;
   display: block;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,.7));
   animation: chickenBob 1.8s ease-in-out infinite;
 }
-.chick-shadow { width: 40px; height: 9px; border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,.55), transparent 70%); margin-top: 2px; }
+.chick-shadow { width: 52px; height: 11px; border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,.55), transparent 70%); margin-top: 1px; }
 
 .chicken.jumping .chick-img { animation: chickenJump .32s ease-out forwards; }
 .chicken.dead    .chick-img { animation: chickenDead .55s ease-out forwards !important; filter: drop-shadow(0 0 14px rgba(239,68,68,.9)); }
@@ -274,140 +302,8 @@ button:disabled { cursor: not-allowed; opacity: .38; }
   .chance-lbl { display: none; }
   .diff-tab { padding: 0 10px; font-size: 12px; }
   .action-btns { width: 100%; justify-content: flex-end; }
-}
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600;700&display=swap');
 
-// --- Luxury Color Palette ---
-$bg-dark: #05070a;
-$surface: rgba(15, 23, 42, 0.8);
-$accent-blue: #3b82f6;
-$accent-gold: #fbbf24;
-$accent-green: #10b981;
-$glass-border: rgba(255, 255, 255, 0.08);
-
-:host {
-  --primary-glow: rgba(59, 130, 246, 0.5);
-  font-family: 'Outfit', sans-serif;
-}
-
-.shell {
-  background: radial-gradient(circle at 50% -20%, #1e293b 0%, $bg-dark 80%);
-  color: #f8fafc;
-}
-
-// --- Topbar: Glassmorphism ---
-.topbar {
-  background: rgba(10, 15, 26, 0.7);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid $glass-border;
-  height: 64px;
-  padding: 0 24px;
-}
-
-.logo {
-  font-family: 'Bebas Neue', cursive;
-  font-size: 28px;
-  letter-spacing: 2px;
-  background: linear-gradient(to bottom, #fff 30%, #94a3b8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  
-  b { color: $accent-gold; -webkit-text-fill-color: initial; }
-}
-
-// --- Game Area: Cinematic Depth ---
-.game-area {
-  background: 
-    linear-gradient(to bottom, rgba(5, 7, 10, 0.8), transparent 20%),
-    url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-  box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
-}
-
-.lane {
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.3) 0%, transparent 100%);
-  transition: background 0.3s ease;
-  
-  &:hover {
-    background: rgba(59, 130, 246, 0.05);
-  }
-}
-
-// --- Coins: 3D Neo-Skeuomorphism ---
-.coin {
-  width: 90px; height: 90px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  
-  &.inactive {
-    background: #1e293b;
-    border: 1px solid $glass-border;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 2px 3px rgba(255,255,255,0.05);
-    filter: grayscale(0.5) opacity(0.7);
-  }
-
-  &.current {
-    background: linear-gradient(145deg, #3b82f6, #1d4ed8);
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6), inset 0 2px 10px rgba(255,255,255,0.4);
-    animation: pulseGlow 2s infinite;
-    transform: scale(1.05);
-  }
-  
-  &.active {
-    background: linear-gradient(145deg, #10b981, #065f46);
-    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
-  }
-}
-
-// --- Controls: Modern Bento Grid Style ---
-.controls {
-  background: #0a0f1a;
-  border-top: 1px solid $glass-border;
-  padding: 20px 32px;
-}
-
-.bet-btn {
-  background: $surface;
-  border: 1px solid $glass-border;
-  border-radius: 12px;
-  padding: 10px 20px;
-  color: #94a3b8;
-  font-weight: 600;
-  transition: all 0.2s;
-
-  &.sel {
-    border-color: $accent-blue;
-    color: white;
-    background: rgba(59, 130, 246, 0.1);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
-  }
-}
-
-.btn-go {
-  background: linear-gradient(180deg, #10b981, #059669);
-  border-radius: 14px;
-  text-transform: uppercase;
-  font-size: 20px;
-  box-shadow: 0 8px 0 #064e3b, 0 15px 25px rgba(16, 185, 129, 0.3);
-  
-  &:active {
-    transform: translateY(4px);
-    box-shadow: 0 4px 0 #064e3b;
-  }
-}
-
-// --- Overlay Cards ---
-.ov-card {
-  border-radius: 24px;
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  padding: 40px;
-}
-
-@keyframes pulseGlow {
-  0% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
-  50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.8); }
-  100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+  .chicken { width: 74px; height: 74px; }
+  .chick-img { width: 64px; height: 64px; }
+  .chick-shadow { width: 42px; height: 9px; }
 }
