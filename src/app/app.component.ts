@@ -76,8 +76,9 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly chickenWidth = 92;
   private onlineTick?: ReturnType<typeof setInterval>;
   private liveWinTimer?: ReturnType<typeof setTimeout>;
-  private hazardMap = new Map<number, boolean>();
   private runSeed = 1;
+  private burnLaneGlobal = 0;
+  private uiFireTick?: ReturnType<typeof setInterval>;
 
   constructor(private cd: ChangeDetectorRef, private zone: NgZone) {}
 
@@ -99,6 +100,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     clearInterval(this.onlineTick);
+    clearInterval(this.uiFireTick);
     clearTimeout(this.liveWinTimer);
   }
 
@@ -156,20 +158,46 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private seededRandom(value: number): number {
-    const x = Math.sin((value + 1) * (this.runSeed + 17) * 12.9898) * 43758.5453;
-    return x - Math.floor(x);
+  private isFireLane(globalIdx: number): boolean {
+    return globalIdx === this.burnLaneGlobal;
   }
 
-  private isFireLane(globalIdx: number): boolean {
-    const cached = this.hazardMap.get(globalIdx);
-    if (cached !== undefined) return cached;
+  private pickBurnLaneGlobal(): number {
+    switch (this.diff) {
+      case 'easy':
+        return 7 + Math.floor(Math.random() * 9);   // 7..15
+      case 'medium':
+        return 5 + Math.floor(Math.random() * 8);   // 5..12
+      case 'hard':
+        return 4 + Math.floor(Math.random() * 7);   // 4..10
+      case 'hardcore':
+      default:
+        return 3 + Math.floor(Math.random() * 6);   // 3..8
+    }
+  }
 
-    const cfg = DIFF[this.diff];
-    const chance = Math.min(0.78, cfg.roastChance * 0.95 + 0.06);
-    const val = this.seededRandom(globalIdx) < chance;
-    this.hazardMap.set(globalIdx, val);
-    return val;
+  private stopUiFireLoop(): void {
+    clearInterval(this.uiFireTick);
+    this.uiFireTick = undefined;
+  }
+
+  private startUiFireLoop(): void {
+    this.stopUiFireLoop();
+    this.uiFireTick = setInterval(() => {
+      if (this.status !== 'running') return;
+
+      const bursts = Math.random() < 0.35 ? 2 : 1;
+      for (let i = 0; i < bursts; i++) {
+        const laneIdx = Math.floor(Math.random() * LANE_COUNT);
+        const lane = this.lanes[laneIdx];
+        if (!lane || lane.fireBurning || lane.fireLethal) continue;
+
+        const globalIdx = this.visibleStart + laneIdx;
+        if (this.isFireLane(globalIdx)) continue;
+
+        this.igniteFire(laneIdx, false, 2000);
+      }
+    }, 900);
   }
 
   private refreshLaneWindow(): void {
@@ -278,6 +306,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       if (lethal) {
+        this.stopUiFireLoop();
         this.status      = 'gameover';
         this.chickenDead = true;
         this.spawnParticles(targetVisible, ['#fb923c','#ef4444','#fbbf24','#f87171'], 28);
@@ -347,7 +376,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.locked  = false;
     this.cashedAmount = 0;
     this.runSeed = Math.floor(Math.random() * 100000) + 1;
-    this.hazardMap.clear();
+    this.burnLaneGlobal = this.pickBurnLaneGlobal();
 
     this.buildLanes();
     this.buildDots();
@@ -355,11 +384,13 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.syncCoins();
     this.syncDots();
     this.refreshLaneWindow();
+    this.startUiFireLoop();
     this.cd.markForCheck();
   }
 
   cashOut(): void {
     if (this.status !== 'running') return;
+    this.stopUiFireLoop();
     this.cashedAmount = this.payout;
     this.balance     += this.cashedAmount;
     this.status       = 'cashedout';
@@ -376,6 +407,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   resetGame(): void {
+    this.stopUiFireLoop();
     this.status = 'idle';
     this.lane   = 0;
     this.visibleStart = 0;
@@ -383,7 +415,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.locked = false;
     this.cashedAmount = 0;
     this.runSeed = Math.floor(Math.random() * 100000) + 1;
-    this.hazardMap.clear();
+    this.burnLaneGlobal = 0;
 
     this.buildLanes();
     this.buildDots();
@@ -422,7 +454,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   selectDiff(d: Difficulty): void {
     if (this.isRunning) return;
     this.diff = d;
-    this.hazardMap.clear();
+    this.burnLaneGlobal = this.pickBurnLaneGlobal();
     this.refreshLaneWindow();
   }
 
