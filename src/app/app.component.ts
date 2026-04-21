@@ -195,7 +195,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         const globalIdx = this.visibleStart + laneIdx;
         if (this.isFireLane(globalIdx)) continue;
 
-        this.igniteFire(laneIdx, false, 2000);
+        // Make random UI fires lethal and short (1s)
+        // this.igniteFire(laneIdx, true, 1000);
       }
     }, 900);
   }
@@ -204,7 +205,9 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.syncLabels();
     for (const l of this.lanes) {
       const globalIdx = this.visibleStart + l.index;
-      l.fireArmed = this.isFireLane(globalIdx);
+      // Do not show the global burn point as "armed" in the UI —
+      // the fire should only appear when the chicken actually lands there.
+      l.fireArmed = false;
       if (!l.fireBurning) l.fireLethal = false;
     }
   }
@@ -291,7 +294,11 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       this.locked = false;
       return;
     }
-    const lethal = this.isFireLane(target);
+    const laneObj = this.lanes[targetVisible];
+    // Do not treat the pre-picked global burn point as "lethal" until
+    // the chicken actually lands there. Only existing burning/random
+    // fires should be lethal pre-landing.
+    const preLandingLethal = !!(laneObj && (laneObj.fireBurning || laneObj.fireLethal));
 
     // Phase 1: start jump, move chicken
     this.chickenJumping = true;
@@ -301,11 +308,15 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     setTimeout(() => {
       this.chickenJumping = false;
 
-      if (lethal) {
-        this.igniteFire(targetVisible, true, 1200);
+      const landingGlobal = target; // target is the global index we're landing on
+      const landingLethal = preLandingLethal || landingGlobal === this.burnLaneGlobal;
+
+      if (landingGlobal === this.burnLaneGlobal) {
+        // Reveal the burn point only when landed on — short lethal fire
+        this.igniteFire(targetVisible, true, 1000);
       }
 
-      if (lethal) {
+      if (landingLethal) {
         this.stopUiFireLoop();
         this.status      = 'gameover';
         this.chickenDead = true;
